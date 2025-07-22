@@ -79,15 +79,20 @@ export class SubProjectService {
     await subProject.deleteOne();
   }
 
-  async assignUser(subProjectId: string, userId: string): Promise<void> {
+  async assignUser(subProjectId: string, userId: string, projectId: string): Promise<void> {
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
+    const project = await this.projectModel.findById(projectId);
+    if (!project) throw new Error('Project not found');
     const user = await this.userModel.findById(userId);
     if (!user) throw new Error('User not found');
     if (!user.subProjects.includes(subProjectId)) {
       user.subProjects.push(subProjectId);
-      await user.save();
     }
+    if (!user.projects.includes(projectId)) {
+      user.projects.push(projectId);
+    }
+    await user.save();
   }
 
   async hasAccess(subProjectId: string, user: any): Promise<boolean> {

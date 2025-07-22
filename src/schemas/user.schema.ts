@@ -39,8 +39,17 @@ export class User extends Document {
   @Prop()
   zipcode: string;
 
+  @Prop()
+  termsAccepted: boolean;
+
+  @Prop()
+  signature: string;
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'SubProject' }] })
   subProjects: string[];
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Project' }] })
+  projects: string[];
 
   @Prop()
   resetToken?: string;

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Request, UnauthorizedException, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Request, UnauthorizedException, UploadedFile, UseInterceptors, Delete } from '@nestjs/common';
 import { QuestionService } from './question.service';
 import { Question } from '../schemas/question.schema';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
@@ -36,15 +36,27 @@ export class QuestionController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('bulletins')
-  async getAllBulletins(@Request() req): Promise<Question[]> {
-    return this.questionService.getAllBulletins();
+  @Get('bulletins/:subProjectId')
+  async getAllBulletins(@Request() req, @Param('subProjectId') subProjectId: string): Promise<Question[]> {
+    return this.questionService.getAllBulletins(subProjectId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('createBulletin')
   async createBulletin(@Request() req, @Body() body: { id: string }): Promise<Question> {
     return this.questionService.createBulletin(req.user._id, body.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('deleteBulletin/:id')
+  async deleteBulletin(@Request() req, @Param('id') id: string): Promise<void> {
+    return this.questionService.deletebulletin(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('deleteQuestion/:subProjectId/:questionId')
+  async deleteQuestion(@Request() req, @Param('subProjectId') subProjectId: string, @Param('questionId') questionId: string): Promise<void> {
+    return this.questionService.deleteQuestion(subProjectId, questionId);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -55,7 +67,6 @@ export class QuestionController {
     @Body() body: any,
     @Request() req
   ): Promise<Question> {
-    console.log(body, file);
     return this.questionService.create(req.user._id, body.text, body.subProjectId, file)
   }
 }

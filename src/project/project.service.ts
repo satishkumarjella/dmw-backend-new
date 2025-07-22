@@ -12,7 +12,7 @@ export class ProjectService {
   );
   private containerClient = this.blobServiceClient.getContainerClient('project-management');
 
-  constructor(@InjectModel('Project') private projectModel: Model<Project>) {}
+  constructor(@InjectModel('Project') private projectModel: Model<Project>) { }
 
   async create(name: string): Promise<Project> {
     const projectId = uuidv4();
@@ -23,11 +23,14 @@ export class ProjectService {
     return project.save();
   }
 
-  async findAll(): Promise<Project[]> {
-    return this.projectModel.find().exec();
+  async findAll(user: any): Promise<Project[]> {
+    if (user.role === 'admin') {
+      return this.projectModel.find().exec();
+    }
+    return this.projectModel.find({ _id: { $in: user.projects } }).exec();
   }
 
-    async findById(projectId: string): Promise<Project> {
+  async findById(projectId: string): Promise<Project> {
     const project = await this.projectModel.findById(projectId).exec();
     if (!project) throw new Error('Project not found');
     return project;

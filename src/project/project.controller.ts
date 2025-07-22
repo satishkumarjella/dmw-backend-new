@@ -16,8 +16,8 @@ export class ProjectController {
 
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findAll(): Promise<Project[]> {
-    return this.projectService.findAll();
+  async findAll(@Request() req): Promise<Project[]> {
+    return this.projectService.findAll(req.user);
   }
 
   @UseGuards(JwtAuthGuard)

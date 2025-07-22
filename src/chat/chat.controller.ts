@@ -22,7 +22,6 @@ export class ChatController {
   @UseGuards(JwtAuthGuard)
   @Post('send')
   async sendMessage(@Request() req, @Body() body: { recipientId: string; content: string }) {
-    console.log(req.user);
     const message = await this.chatService.saveMessage(req.user._id, body.recipientId, body.content);
     return message;
   }

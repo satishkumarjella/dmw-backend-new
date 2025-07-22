@@ -28,9 +28,9 @@ export class SubProjectController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/assign')
-  async assignUser(@Request() req, @Param('id') id: string, @Body() body: { userId: string }): Promise<void> {
+  async assignUser(@Request() req, @Param('id') id: string, @Body() body: { userId: string, projectId: string }): Promise<void> {
     if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
-    return this.subProjectService.assignUser(id, body.userId);
+    return this.subProjectService.assignUser(id, body.userId, body.projectId);
   }
 
   @UseGuards(JwtAuthGuard)

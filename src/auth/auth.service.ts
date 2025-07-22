@@ -13,9 +13,9 @@ export class AuthService {
         private jwtService: JwtService,
     ) { }
 
-    async register(email: string, password: string, role: string, firstName: string, lastName: string, company: string, phone: string, title: string, companyAddress: string, city: string, state: string, zipcode: string): Promise<any> {
+    async register(email: string, password: string, role: string, firstName: string, lastName: string, company: string, phone: string, title: string, companyAddress: string, city: string, state: string, zipcode: string, termsAccepted: boolean, signature: string): Promise<any> {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new this.userModel({ email, password: hashedPassword, role, firstName, lastName, company, phone, title, companyAddress, city, state, zipcode, subProjects: [] });
+        const user = new this.userModel({ email, password: hashedPassword, role, firstName, lastName, company, phone, title, companyAddress, city, state, zipcode, subProjects: [], termsAccepted, signature });
         await user.save();
         return this.generateToken(user);
     }
@@ -61,7 +61,7 @@ export class AuthService {
         if (!user) {
             return null;
         }
-        return { _id: user._id, email: user.email, role: user.role, subProjects: user.subProjects, company: user.company };
+        return { _id: user._id, email: user.email, role: user.role, subProjects: user.subProjects, company: user.company, projects: user.projects };
     }
 
     async getAllUsers(user: any): Promise<User[]> {

@@ -23,7 +23,6 @@ export class QuestionService {
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
     let fileName = '';
-    console.log(file)
     if (file) {
       fileName = await this.uploadQuestionFile(file, subProjectId);
     }
@@ -39,8 +38,8 @@ export class QuestionService {
     return await this.bulletinModel.insertMany(question);
   }
 
-  async getAllBulletins(): Promise<Question[]> {
-    return this.bulletinModel.find({}).exec();
+  async getAllBulletins(subProjectId): Promise<Question[]> {
+    return this.bulletinModel.find({ subProject: subProjectId }).exec();
   }
 
   async findBySubProject(subProjectId: string, user: any): Promise<Question[]> {
@@ -65,5 +64,19 @@ export class QuestionService {
     const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
     await blockBlobClient.upload(file.buffer, file.size);
     return blobName;
+  }
+
+  async deletebulletin(bulletinId: string): Promise<void> {
+    const bulletin = await this.bulletinModel.findById(bulletinId);
+    await bulletin?.deleteOne();
+  }
+
+  async deleteQuestion(subProjectId: string, questionId: string): Promise<void> {
+    const bulletin = await this.questionModel.findById(questionId);
+    await bulletin?.deleteOne();
+    const subProject = await this.subProjectModel.findById(subProjectId);
+    if (!subProject) throw new Error('SubProject not found');
+    subProject.questions.filter(item => item !== questionId);
+    await subProject.save();
   }
 }
