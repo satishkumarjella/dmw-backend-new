@@ -28,8 +28,14 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('users')
-  async findBySubProject(@Request() req,) {
+  async getUsers(@Request() req,) {
     return this.authService.getAllUsers(req.user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('user')
+  async getUser(@Request() req,) {
+    return this.authService.getUser(req.user);
   }
 
   @UseGuards(JwtAuthGuard)

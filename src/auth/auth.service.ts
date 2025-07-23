@@ -68,6 +68,11 @@ export class AuthService {
         return this.userModel.find().select('-password').exec();
     }
 
+    async getUser(user: any): Promise<any> {
+        return this.userModel.findById(user._id).select('-password').exec();
+    }
+
+
     async updateUser(id: string, updateUserDto: { email: string, password: string, role: string, firstName: string, lastName: string, company: string, phone: string, title: string, companyAddress: string, city: string, state: string, zipcode: string}) {
       const updateData: any = {};
       if (updateUserDto.email) updateData.email = updateUserDto.email;
