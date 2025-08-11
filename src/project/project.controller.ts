@@ -22,9 +22,9 @@ export class ProjectController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(@Request() req, @Param('id') id: string, @Body() body: { name: string }): Promise<Project> {
+  async update(@Request() req, @Param('id') id: string, @Body() body: { terms: string }): Promise<Project> {
     if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
-    return this.projectService.update(id, body.name);
+    return this.projectService.update(id, body.terms);
   }
 
   @UseGuards(JwtAuthGuard)

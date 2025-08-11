@@ -46,9 +46,29 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @Put('users/updateProjectTerms/:id')
+  async updateProjectTerms(@Param('id') id: string, @Body() body: { projectTerms: any }, @Request() req) {
+    return this.authService.updateProjectTerms(id, body);
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Delete('users/delete/:id')
   async delete(@Param('id') id: string, @Request() req) {
     if (req.user.role !== 'admin') throw new Error('Unauthorized');
     return this.authService.deleteUser(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('users/subprojects/:id')
+  async getAllSubprojects(@Param('id') id: string, @Request() req) {
+    if (req.user.role !== 'admin') throw new Error('Unauthorized');
+    return this.authService.getUsersForSubproject(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('users/subprojects/:userId/:projectId/:id')
+  async deleteSubProjectForUser(@Param('userId') userId: string, @Param('projectId') projectId: string, @Param('id') id: string, @Request() req) {
+    if (req.user.role !== 'admin') throw new Error('Unauthorized');
+    return this.authService.deleteSubProjectForUser(userId, projectId, id);
   }
 }

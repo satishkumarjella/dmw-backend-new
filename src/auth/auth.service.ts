@@ -5,11 +5,13 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '../schemas/user.schema';
+import { SubProject } from '../schemas/subproject.schema';
 
 @Injectable()
 export class AuthService {
     constructor(
         @InjectModel('User') public userModel: Model<User>,
+        @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
         private jwtService: JwtService,
     ) { }
 
@@ -72,21 +74,41 @@ export class AuthService {
         return this.userModel.findById(user._id).select('-password').exec();
     }
 
+    async getUsersForSubproject(subProjectId: any): Promise<any> {
+        return this.userModel.find({ subProjects: subProjectId }).exec();
+    }
 
-    async updateUser(id: string, updateUserDto: { email: string, password: string, role: string, firstName: string, lastName: string, company: string, phone: string, title: string, companyAddress: string, city: string, state: string, zipcode: string}) {
-      const updateData: any = {};
-      if (updateUserDto.email) updateData.email = updateUserDto.email;
-      if (updateUserDto.password) updateData.password = updateUserDto.password;
-      if (updateUserDto.lastName) updateData.lastName = updateUserDto.lastName;
-      if (updateUserDto.firstName) updateData.firstName = updateUserDto.firstName;
-      if (updateUserDto.company) updateData.company = updateUserDto.company;
-      if (updateUserDto.phone) updateData.phone = updateUserDto.phone;
-      if (updateUserDto.title) updateData.title = updateUserDto.title;
-      if (updateUserDto.companyAddress) updateData.companyAddress = updateUserDto.companyAddress;
-      if (updateUserDto.city) updateData.city = updateUserDto.city;
-      if (updateUserDto.state) updateData.state = updateUserDto.state;
-      if (updateUserDto.zipcode) updateData.zipcode = updateUserDto.zipcode;
-      if (updateUserDto.state) updateData.role = updateUserDto.role;
+    async deleteSubProjectForUser(userId: any, projectId: any, subProjectId: any): Promise<any> {
+        const updatedUser: any = await this.userModel.updateOne({ _id: userId }, { $pull: { subProjects: subProjectId } }).exec();
+        const subProjects = await this.subProjectModel.find({ project: projectId }).exec();
+        const user: any = await this.userModel.findById(userId).exec();
+        const isAnySubProjectExist = user?.subProjects?.filter(item => subProjects?.some((subItem: any) => (subItem?._id.toString()) === item.toString()));
+        if (!isAnySubProjectExist?.length) {
+            return this.userModel.updateOne({ _id: userId }, { $pull: { projects: projectId } }).exec();
+        }
+        return updatedUser;
+    }
+
+    async updateUser(id: string, updateUserDto: { email: string, password: string, role: string, firstName: string, lastName: string, company: string, phone: string, title: string, companyAddress: string, city: string, state: string, zipcode: string }) {
+        const updateData: any = {};
+        if (updateUserDto.email) updateData.email = updateUserDto.email;
+        if (updateUserDto.password) updateData.password = updateUserDto.password;
+        if (updateUserDto.lastName) updateData.lastName = updateUserDto.lastName;
+        if (updateUserDto.firstName) updateData.firstName = updateUserDto.firstName;
+        if (updateUserDto.company) updateData.company = updateUserDto.company;
+        if (updateUserDto.phone) updateData.phone = updateUserDto.phone;
+        if (updateUserDto.title) updateData.title = updateUserDto.title;
+        if (updateUserDto.companyAddress) updateData.companyAddress = updateUserDto.companyAddress;
+        if (updateUserDto.city) updateData.city = updateUserDto.city;
+        if (updateUserDto.state) updateData.state = updateUserDto.state;
+        if (updateUserDto.zipcode) updateData.zipcode = updateUserDto.zipcode;
+        if (updateUserDto.state) updateData.role = updateUserDto.role;
+        return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).select('-password').exec();
+    }
+
+    async updateProjectTerms(id: string, updateUserDto: { projectTerms: any }) {
+        const updateData: any = await this.getUser({_id: id});
+        if (updateUserDto.projectTerms) updateData.projectTerms = updateUserDto.projectTerms;
         return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).select('-password').exec();
     }
 

@@ -2,6 +2,17 @@ import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
 @Schema()
+export class ProjectTerms extends Document {
+  @Prop({ required: true })
+  projectId: string; 
+
+  @Prop({ required: true })
+  projectTermsAccepted: boolean; // The key
+}
+
+export const ProjectTermsSchema = SchemaFactory.createForClass(ProjectTerms);
+
+@Schema()
 export class User extends Document {
   @Prop({ required: true, unique: true })
   email: string;
@@ -50,6 +61,9 @@ export class User extends Document {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Project' }] })
   projects: string[];
+
+  @Prop({ type: [ProjectTermsSchema] })
+  projectTerms: ProjectTerms[];
 
   @Prop()
   resetToken?: string;

@@ -19,7 +19,7 @@ export class ProjectService {
     const blobFolder = `projects/${projectId}`;
     // Create project folder in Azure Blob Storage
     await this.containerClient.createIfNotExists();
-    const project = new this.projectModel({ name, subProjects: [], blobFolder });
+    const project = new this.projectModel({ name, subProjects: [], blobFolder, projectTerms: '' });
     return project.save();
   }
 
@@ -36,10 +36,10 @@ export class ProjectService {
     return project;
   }
 
-  async update(projectId: string, name: string): Promise<Project> {
+  async update(projectId: string, terms: string): Promise<Project> {
     const project = await this.projectModel.findById(projectId);
     if (!project) throw new Error('Project not found');
-    project.name = name;
+    project.projectTerms = terms;
     return project.save();
   }
 

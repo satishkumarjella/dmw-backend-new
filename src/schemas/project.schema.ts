@@ -11,6 +11,9 @@ export class Project extends Document {
 
   @Prop({ required: true })
   blobFolder: string; // e.g., projects/projectId
+
+  @Prop()
+  projectTerms: string; 
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);
