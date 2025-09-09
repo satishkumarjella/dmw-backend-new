@@ -39,7 +39,7 @@ export class SubProjectService {
     if (user.role === 'admin') {
       return this.subProjectModel.find({ project: projectId }).exec();
     }
-    return this.subProjectModel.find({ project: projectId, _id: { $in: user.subProjects } }).exec();
+    return this.subProjectModel.find({ $and: [{ project: projectId }, { $or: [{ isPublic: true }, { _id: { $in: user.subProjects } }] }] }).exec();
   }
 
   async findById(subProjectId: string): Promise<SubProject> {
@@ -155,5 +155,78 @@ export class SubProjectService {
   //     readableStream.on('error', reject);
   //   });
   // }
+
+  async listSubprojects(): Promise<string[]> {
+    const subprojects: string[] = [];
+    const iter = this.containerClient.listBlobsByHierarchy('/', { prefix: '' });
+    for await (const item of iter) {
+      if (item.kind === 'prefix') {
+        subprojects.push(item.name.replace('/', '')); // e.g., "subproject1/"
+      }
+    }
+    return subprojects;
+  }
+
+  async createSubproject(name: string): Promise<void> {
+    const blobName = `${name}/`;
+    const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
+    await blockBlobClient.upload('', 0); // Zero-length blob for virtual folder
+  }
+
+  async listItems(subproject: string, folder: string = ''): Promise<{ type: 'folder' | 'file'; name: string }[]> {
+    const prefix = `${subproject}/${folder}`;
+    const items: { type: 'folder' | 'file'; name: string }[] = [];
+    const iter = this.containerClient.listBlobsByHierarchy('/', { prefix });
+    for await (const item of iter) {
+      if (item.kind === 'prefix') {
+        items.push({ type: 'folder', name: item.name.replace(prefix, '').replace('/', '') });
+      } else {
+        items.push({ type: 'file', name: item.name.replace(prefix, '') });
+      }
+    }
+    return items;
+  }
+
+  async createFolder(folderPath: string): Promise<void> {
+    const blobName = `${folderPath}/`;
+    const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
+    await blockBlobClient.upload('', 0);
+  }
+
+  async delete(folderPath: string): Promise<void> {
+    const blobName = `${folderPath}`;
+    const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
+    await blockBlobClient.delete();
+  }
+
+  async deleteFolder(folderPath: string): Promise<void> {
+    try {
+      // List all blobs with the given folder prefix
+      const blobItems = this.containerClient.listBlobsFlat({ prefix: folderPath });
+      // Delete each blob
+      for await (const blobItem of blobItems) {
+        const blobClient = this.containerClient.getBlobClient(blobItem.name);
+        await blobClient.deleteIfExists();
+        console.log(`Deleted blob: ${blobItem.name}`);
+      }
+      console.log(`All blobs in folder ${folderPath} deleted successfully.`);
+    } catch (error) {
+      console.error(`Error deleting folder ${folderPath}:`, error);
+      throw new Error(`Failed to delete folder: ${error.message}`);
+    }
+  }
+
+  async uploadFile(path: string, file: Express.Multer.File): Promise<void> {
+    const blobName = `${path}/${file.originalname}`;
+    const blockBlobClient = this.containerClient.getBlockBlobClient(blobName);
+    await blockBlobClient.uploadData(file.buffer);
+  }
+
+  async makeSubProjectPublic(subProjectId: any, isChecked: boolean) {
+    const subProject = await this.subProjectModel.findById(subProjectId);
+    if (!subProject) throw new Error('SubProject not found');
+    subProject.isPublic = isChecked;
+    return subProject.save();
+  }
 }
 

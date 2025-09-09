@@ -48,6 +48,22 @@ export class FileController {
     return this.fileService.listFiles(subProjectId);
   }
 
+
+  @UseGuards(JwtAuthGuard)
+  @Get('getFilesFromPath/:subProjectId/:path')
+  async listFilesFromPath(@Request() req, @Param('subProjectId') subProjectId: string, @Param('path') path: string): Promise<{ name: string; url: string }[]> {
+    // Verify user has access to subproject
+    console.log(subProjectId, path)
+    const subProjects = await this.subProjectService.findByProject(
+      (await this.subProjectService.findById(subProjectId)).project.toString(),
+      req.user,
+    );
+    if (!subProjects.some((sp: any) => sp._id.toString() === subProjectId)) {
+      throw new UnauthorizedException('Access denied to subproject');
+    }
+    return this.fileService.listFiles(subProjectId, path);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('project/:projectId/download')
   async downloadProjectZip(@Request() req, @Param('projectId') projectId: string, @Res() res: Response): Promise<void> {
