@@ -5,19 +5,25 @@ import { Question } from '../schemas/question.schema';
 import { SubProject } from '../schemas/subproject.schema';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { v4 as uuidv4 } from 'uuid';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class QuestionService {
 
-  private blobServiceClient = BlobServiceClient.fromConnectionString(
-    'AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;',
-  );
-  private containerClient = this.blobServiceClient.getContainerClient('project-management');
+  private blobServiceClient: any;
+  private containerClient: any;
   constructor(
     @InjectModel('Question') private questionModel: Model<Question>,
     @InjectModel('Bulletin') private bulletinModel: Model<Question>,
     @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
-  ) { }
+    private configService: ConfigService
+  ) { 
+      const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING')
+      this.blobServiceClient = BlobServiceClient.fromConnectionString(
+        connString
+      );
+      this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
+  }
 
   async create(userId: string, text: string, subProjectId: string, file: Express.Multer.File): Promise<Question> {
     const subProject = await this.subProjectModel.findById(subProjectId);

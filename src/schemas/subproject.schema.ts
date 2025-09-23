@@ -1,7 +1,7 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Types, Document } from 'mongoose';
 
-@Schema()
+@Schema({ autoIndex: false })
 export class SubProject extends Document {
   @Prop({ required: true })
   name: string;

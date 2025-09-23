@@ -12,8 +12,11 @@ import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-    MongooseModule.forRoot('mongodb://localhost:27017/dmw'),
+    ConfigModule.forRoot({
+      envFilePath: `env/.env.${process.env.NODE_ENV || 'development'}`,
+      isGlobal: true, // Makes ConfigModule available globally
+    }),
+    MongooseModule.forRoot('mongodb+srv://Sheshank:Sms888123@storage2884-db.mongocluster.cosmos.azure.com/?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000'),
     JwtModule.register({
       secret: 'your-secret-key',
       signOptions: { expiresIn: '1h' },

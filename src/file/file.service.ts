@@ -1,23 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { BlobServiceClient } from '@azure/storage-blob';
-import * as JSZip from 'jszip';
+import JSZip from 'jszip';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { SubProject } from '../schemas/subproject.schema';
 import { Project } from '../schemas/project.schema';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class FileService {
-    private blobServiceClient = BlobServiceClient.fromConnectionString(
-        'AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;',
-    );
-    private containerClient = this.blobServiceClient.getContainerClient('project-management');
-
-
+    private blobServiceClient: any;
+    private containerClient: any;
     constructor(
         @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
         @InjectModel('Project') private projectModel: Model<Project>,
-    ) { }
+        private configService: ConfigService
+    ) {
+ const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING')
+    this.blobServiceClient = BlobServiceClient.fromConnectionString(
+      connString
+    );
+    this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
+     }
 
     async uploadFile(file: Express.Multer.File, subProjectId: string): Promise<{ message: any }> {
         const subProject = await this.subProjectModel.findById(subProjectId);

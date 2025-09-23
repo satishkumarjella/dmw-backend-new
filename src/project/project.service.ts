@@ -4,15 +4,21 @@ import { Model } from 'mongoose';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from '../schemas/project.schema';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ProjectService {
-  private blobServiceClient = BlobServiceClient.fromConnectionString(
-    'AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;',
-  );
-  private containerClient = this.blobServiceClient.getContainerClient('project-management');
+  private blobServiceClient: any;
+  private containerClient: any;
 
-  constructor(@InjectModel('Project') private projectModel: Model<Project>) { }
+  constructor(@InjectModel('Project') private projectModel: Model<Project>, private configService: ConfigService) { 
+    const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING');
+    console.log(connString);
+    this.blobServiceClient = BlobServiceClient.fromConnectionString(
+      connString
+    );
+    this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
+  }
 
   async create(name: string): Promise<Project> {
     const projectId = uuidv4();

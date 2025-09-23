@@ -7,20 +7,26 @@ import { Project } from '../schemas/project.schema';
 import { SubProject } from '../schemas/subproject.schema';
 import { User } from '../schemas/user.schema';
 import * as archiver from 'archiver';
-import JSZip from 'jszip';
+import * as JSZip from 'jszip';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SubProjectService {
-  private blobServiceClient = BlobServiceClient.fromConnectionString(
-    'AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;',
-  );
-  private containerClient = this.blobServiceClient.getContainerClient('project-management');
+  private blobServiceClient: any;
+  private containerClient : any;
 
   constructor(
     @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
     @InjectModel('Project') private projectModel: Model<Project>,
     @InjectModel('User') private userModel: Model<User>,
-  ) { }
+    private configService: ConfigService
+  ) {
+    const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING')
+    this.blobServiceClient = BlobServiceClient.fromConnectionString(
+      connString
+    );
+    this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
+   }
 
   async create(name: string, projectId: string): Promise<SubProject> {
     const project = await this.projectModel.findById(projectId);
@@ -210,7 +216,7 @@ export class SubProjectService {
         console.log(`Deleted blob: ${blobItem.name}`);
       }
       console.log(`All blobs in folder ${folderPath} deleted successfully.`);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error deleting folder ${folderPath}:`, error);
       throw new Error(`Failed to delete folder: ${error.message}`);
     }
