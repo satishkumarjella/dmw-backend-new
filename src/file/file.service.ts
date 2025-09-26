@@ -16,12 +16,13 @@ export class FileService {
         @InjectModel('Project') private projectModel: Model<Project>,
         private configService: ConfigService
     ) {
- const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING')
-    this.blobServiceClient = BlobServiceClient.fromConnectionString(
-      connString
-    );
-    this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
-     }
+        const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING');
+        const containerName: any = this.configService.get<string>('BLOB_CONTAINER');
+        this.blobServiceClient = BlobServiceClient.fromConnectionString(
+        connString
+        );
+        this.containerClient = this.blobServiceClient.getContainerClient(containerName);
+    }
 
     async uploadFile(file: Express.Multer.File, subProjectId: string): Promise<{ message: any }> {
         const subProject = await this.subProjectModel.findById(subProjectId);

@@ -13,11 +13,11 @@ export class ProjectService {
 
   constructor(@InjectModel('Project') private projectModel: Model<Project>, private configService: ConfigService) { 
     const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING');
-    console.log(connString);
+    const containerName: any = this.configService.get<string>('BLOB_CONTAINER');
     this.blobServiceClient = BlobServiceClient.fromConnectionString(
       connString
     );
-    this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
+    this.containerClient = this.blobServiceClient.getContainerClient(containerName);
   }
 
   async create(name: string): Promise<Project> {

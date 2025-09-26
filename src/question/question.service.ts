@@ -18,11 +18,12 @@ export class QuestionService {
     @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
     private configService: ConfigService
   ) { 
+      const containerName: any = this.configService.get<string>('BLOB_CONTAINER');
       const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING')
       this.blobServiceClient = BlobServiceClient.fromConnectionString(
         connString
       );
-      this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
+      this.containerClient = this.blobServiceClient.getContainerClient(containerName);
   }
 
   async create(userId: string, text: string, subProjectId: string, file: Express.Multer.File): Promise<Question> {

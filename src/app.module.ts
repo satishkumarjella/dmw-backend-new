@@ -13,7 +13,7 @@ import { ChatModule } from './chat/chat.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: `env/.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
       isGlobal: true, // Makes ConfigModule available globally
     }),
     MongooseModule.forRoot('mongodb+srv://Sheshank:Sms888123@storage2884-db.mongocluster.cosmos.azure.com/?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000'),

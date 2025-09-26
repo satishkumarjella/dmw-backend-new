@@ -21,11 +21,12 @@ export class SubProjectService {
     @InjectModel('User') private userModel: Model<User>,
     private configService: ConfigService
   ) {
-    const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING')
-    this.blobServiceClient = BlobServiceClient.fromConnectionString(
-      connString
-    );
-    this.containerClient = this.blobServiceClient.getContainerClient('BLOB_CONTAINER');
+      const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING');
+      const containerName: any = this.configService.get<string>('BLOB_CONTAINER');
+      this.blobServiceClient = BlobServiceClient.fromConnectionString(
+        connString
+      );
+      this.containerClient = this.blobServiceClient.getContainerClient(containerName);
    }
 
   async create(name: string, projectId: string): Promise<SubProject> {
