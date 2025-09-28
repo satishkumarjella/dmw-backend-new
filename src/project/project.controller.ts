@@ -1,7 +1,9 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, Request, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, Request, UnauthorizedException, Res, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { Project } from '../schemas/project.schema';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('projects')
 export class ProjectController {
@@ -21,10 +23,11 @@ export class ProjectController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Put(':id')
-  async update(@Request() req, @Param('id') id: string, @Body() body: { terms: string }): Promise<Project> {
+  @UseInterceptors(FileInterceptor('file'))
+  @Post(':id')
+  async update(@Request() req, @Param('id') id: string, @Body() body: any, @UploadedFile() file: Express.Multer.File,): Promise<Project> {
     if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
-    return this.projectService.update(id, body.terms);
+    return this.projectService.update(id, file, body);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -32,5 +35,19 @@ export class ProjectController {
   async delete(@Request() req, @Param('id') id: string): Promise<void> {
     if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
     return this.projectService.delete(id);
+  }
+
+  @Get('downloadTerms/:id')
+  async downloadFile(@Param('id') id: string, @Res() res: Response) {
+    const project = await this.projectService.findById(id);
+    const document = project.termsFile;
+    if (!project.termsFile) {
+      throw new Error('File not found')
+    }
+    res.set({
+      'Content-Type': document.contentType,
+      'Content-Disposition': `attachment; filename="${document.filename}"`,
+    });
+    res.send(document.fileData);
   }
 }

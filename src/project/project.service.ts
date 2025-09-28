@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { v4 as uuidv4 } from 'uuid';
-import { Project } from '../schemas/project.schema';
+import { DocumentFile, Project } from '../schemas/project.schema';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -42,10 +42,16 @@ export class ProjectService {
     return project;
   }
 
-  async update(projectId: string, terms: string): Promise<Project> {
+  async update(projectId: string, file: Express.Multer.File, body: any): Promise<Project> {
     const project = await this.projectModel.findById(projectId);
+    const document = new DocumentFile();
+    document.filename = file.originalname;
+    document.contentType = file.mimetype;
+    document.fileData = file.buffer
+    document.uploadDate = new Date();
     if (!project) throw new Error('Project not found');
-    project.projectTerms = terms;
+    project.termsFile = document;
+    project.projectTerms = body.terms;
     return project.save();
   }
 
@@ -58,4 +64,6 @@ export class ProjectService {
     }
     await project.deleteOne();
   }
+
+  
 }

@@ -229,7 +229,18 @@ export class SubProjectService {
     await blockBlobClient.uploadData(file.buffer);
   }
 
-  async makeSubProjectPublic(subProjectId: any, isChecked: boolean) {
+  async makeSubProjectPublic(subProjectId: any, isChecked: any, projectId: any) {
+    if (isChecked == 'true') {
+      await this.userModel.updateMany(
+        { role: 'user'},
+        { $addToSet: { projects: projectId, subProjects: subProjectId }} 
+      )
+    } else {
+      await this.userModel.updateMany(
+        { role: 'user'},
+        { $pull: { subProjects: subProjectId }} 
+      )
+    }
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
     subProject.isPublic = isChecked;

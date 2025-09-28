@@ -97,9 +97,9 @@ export class SubProjectController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('subproject/makePublic/:subProjectId/:isChecked')
-  async makeSubProjectPublic(@Param('subProjectId') subProjectId: string, @Param('isChecked') isChecked: boolean) {
-    await this.subProjectService.makeSubProjectPublic(subProjectId, isChecked);
+  @Get('subproject/makePublic/:subProjectId/:isChecked/:projectId')
+  async makeSubProjectPublic(@Param('subProjectId') subProjectId: string, @Param('isChecked') isChecked: boolean, @Param('projectId') projectId: string) {
+    await this.subProjectService.makeSubProjectPublic(subProjectId, isChecked, projectId);
     return {message: 'successfully updated'}
   }
 }
