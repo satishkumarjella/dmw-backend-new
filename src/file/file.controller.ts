@@ -1,9 +1,10 @@
-import { Controller, Post, Get, Param, UseGuards, Request, Res, UploadedFile, UseInterceptors, UnauthorizedException, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Param, UseGuards, Request, Res, UploadedFile, UseInterceptors, UnauthorizedException, Delete, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { FileService } from './file.service';
 import { SubProjectService } from '../subproject/subproject.service';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
+import { isValidObjectId } from 'mongoose';
 
 @Controller('files')
 export class FileController {
@@ -50,10 +51,17 @@ export class FileController {
 
 
   @UseGuards(JwtAuthGuard)
-  @Get(':subProjectId/:path')
-  async listFilesFromPath(@Request() req, @Param('subProjectId') subProjectId: string, @Param('path') path: string): Promise<{ name: string; url: string }[]> {
-    // Verify user has access to subproject
-    console.log(subProjectId, path)
+  @Post(':subProjectId/getfilesfrompath')
+  async listFilesFromPath(
+    @Param('subProjectId') subProjectId: string,
+    @Body() body: { path: string },
+    @Request() req,
+  ): Promise<{ name: string; url: string }[]> {
+    if (!isValidObjectId(subProjectId)) {
+      throw new HttpException('Invalid SubProject ID', HttpStatus.BAD_REQUEST);
+    }
+  
+    console.log(subProjectId, body.path);
     const subProjects = await this.subProjectService.findByProject(
       (await this.subProjectService.findById(subProjectId)).project.toString(),
       req.user,
@@ -61,7 +69,7 @@ export class FileController {
     if (!subProjects.some((sp: any) => sp._id.toString() === subProjectId)) {
       throw new UnauthorizedException('Access denied to subproject');
     }
-    return this.fileService.listFiles(subProjectId, path);
+    return this.fileService.listFiles(subProjectId, body.path);
   }
 
   @UseGuards(JwtAuthGuard)
