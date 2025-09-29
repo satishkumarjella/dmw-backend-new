@@ -50,7 +50,7 @@ export class FileController {
 
 
   @UseGuards(JwtAuthGuard)
-  @Get('getfilesfrompath/:subProjectId/:path')
+  @Get(':subProjectId/:path')
   async listFilesFromPath(@Request() req, @Param('subProjectId') subProjectId: string, @Param('path') path: string): Promise<{ name: string; url: string }[]> {
     // Verify user has access to subproject
     console.log(subProjectId, path)
