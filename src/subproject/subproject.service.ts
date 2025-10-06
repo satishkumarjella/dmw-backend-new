@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { BlobServiceClient } from '@azure/storage-blob';
+import { BlobSASPermissions, BlobServiceClient, SASProtocol, StorageSharedKeyCredential, generateBlobSASQueryParameters } from '@azure/storage-blob';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from '../schemas/project.schema';
 import { SubProject } from '../schemas/subproject.schema';
@@ -245,6 +245,35 @@ export class SubProjectService {
     if (!subProject) throw new Error('SubProject not found');
     subProject.isPublic = isChecked;
     return subProject.save();
+  }
+
+  async generateUploadSas(containerName: string, blobName: string): Promise<string> {
+    const accountName = this.configService.get('AZURE_STORAGE_ACCOUNT_NAME');
+    const accountKey = this.configService.get('AZURE_STORAGE_ACCOUNT_KEY');
+    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+    console.log(accountName);
+    const blobServiceClient = new BlobServiceClient(
+      `https://${accountName}.blob.core.windows.net`,
+      sharedKeyCredential,
+    );
+
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blobClient = containerClient.getBlobClient(blobName);
+
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 30); // 30 min expiry
+
+    const sasOptions = {
+      containerName,
+      blobName,
+      permissions: BlobSASPermissions.parse('w'), // Write permission
+      startsOn: new Date(),
+      expiresOn: expiryTime,
+      protocol: SASProtocol.Https,
+    };
+
+    const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+    return `${blobClient.url}?${sasToken}`;
   }
 }
 

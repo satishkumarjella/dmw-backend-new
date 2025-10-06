@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, UseGuards, Request, Res, UnauthorizedException, Delete, StreamableFile, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UseGuards, Request, Res, UnauthorizedException, Delete, StreamableFile, Query, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { Response } from 'express';
 import { SubProjectService } from './subproject.service';
 import { SubProject } from '../schemas/subproject.schema';
@@ -101,5 +101,21 @@ export class SubProjectController {
   async makeSubProjectPublic(@Param('subProjectId') subProjectId: string, @Param('isChecked') isChecked: boolean, @Param('projectId') projectId: string) {
     await this.subProjectService.makeSubProjectPublic(subProjectId, isChecked, projectId);
     return {message: 'successfully updated'}
+  }
+
+  @Post('subproject/generatesas')
+  async generate(@Body() body: { containerName: string; blobPath: string }) {
+    const { containerName, blobPath } = body;
+
+    // Validate inputs
+    if (!containerName) {
+      throw new BadRequestException('containerName is required');
+    }
+    if (!blobPath) {
+      throw new BadRequestException('blobPath is required and cannot be empty');
+    }
+
+    const sasUrl = await this.subProjectService.generateUploadSas(containerName, blobPath);
+    return { sasUrl };
   }
 }
