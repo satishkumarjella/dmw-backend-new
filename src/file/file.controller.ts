@@ -95,7 +95,7 @@ export class FileController {
     return this.fileService.deleteFile(subProjectId, id);
   }
 
-  @Get('download/:blobPath')
+  @Get(':blobPath/download')
   async downloadFile(@Param('blobPath') blobPath: string, @Res() res: Response) {
     try {
       const buffer = await this.fileService.downloadFile(blobPath);

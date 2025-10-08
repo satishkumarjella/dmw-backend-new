@@ -275,5 +275,90 @@ export class SubProjectService {
     const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
     return `${blobClient.url}?${sasToken}`;
   }
+
+  async generateDownloadSas(containerName: string, blobPath: string): Promise<string> {
+    if (!blobPath) {
+      throw new Error('blobPath cannot be undefined or empty');
+    }
+
+    const accountName = this.configService.get('AZURE_STORAGE_ACCOUNT_NAME');
+    const accountKey = this.configService.get('AZURE_STORAGE_ACCOUNT_KEY');
+    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+
+    const blobServiceClient = new BlobServiceClient(
+      `https://${accountName}.blob.core.windows.net`,
+      sharedKeyCredential,
+    );
+
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const blobClient = containerClient.getBlobClient(blobPath);
+
+    const expiryTime = new Date();
+    expiryTime.setMinutes(expiryTime.getMinutes() + 30); // 30 min expiry
+
+    const sasOptions = {
+      containerName,
+      blobName: blobPath,
+      permissions: BlobSASPermissions.parse('r'), // Read permission
+      startsOn: new Date(),
+      expiresOn: expiryTime,
+      protocol: SASProtocol.Https,
+    };
+
+    const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+    return `${blobClient.url}?${sasToken}`;
+  }
+
+  async generateDownloadSasForFolder(containerName: string, folderPath: string): Promise<{ blobPath: string; sasUrl: string }[]> {
+    if (!folderPath) {
+      throw new Error('folderPath cannot be undefined or empty');
+    }
+
+    const accountName = this.configService.get('AZURE_STORAGE_ACCOUNT_NAME');
+    const accountKey = this.configService.get('AZURE_STORAGE_ACCOUNT_KEY');
+
+    if (!accountName || !accountKey) {
+      throw new Error('Azure storage credentials are missing');
+    }
+
+    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+    const blobServiceClient = new BlobServiceClient(
+      `https://${accountName}.blob.core.windows.net`,
+      sharedKeyCredential,
+    );
+
+    const containerClient = blobServiceClient.getContainerClient(containerName);
+    const sasUrls: { blobPath: string; sasUrl: string }[] = [];
+
+    // Ensure folderPath ends with '/' for prefix matching
+    const prefix = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+
+    // List all blobs with the given prefix
+    for await (const blob of containerClient.listBlobsFlat({ prefix })) {
+      const blobClient = containerClient.getBlobClient(blob.name);
+      const expiryTime = new Date();
+      expiryTime.setMinutes(expiryTime.getMinutes() + 30);
+
+      const sasOptions = {
+        containerName,
+        blobName: blob.name,
+        permissions: BlobSASPermissions.parse('r'), // Read permission
+        startsOn: new Date(),
+        expiresOn: expiryTime,
+        protocol: SASProtocol.Https,
+      };
+
+      const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+      sasUrls.push({
+        blobPath: blob.name,
+        sasUrl: `${blobClient.url}?${sasToken}`,
+      });
+    }
+
+    if (sasUrls.length === 0) {
+      throw new Error(`No blobs found under folder: ${prefix}`);
+    }
+    return sasUrls;
+  }
 }
 

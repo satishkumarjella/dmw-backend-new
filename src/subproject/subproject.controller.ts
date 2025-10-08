@@ -118,4 +118,35 @@ export class SubProjectController {
     const sasUrl = await this.subProjectService.generateUploadSas(containerName, blobPath);
     return { sasUrl };
   }
+
+  @Post('subproject/downloadsas')
+  async generateDownload(@Body() body: { containerName: string; blobPath: string }) {
+    const { containerName, blobPath } = body;
+
+    if (!containerName) {
+      throw new BadRequestException('containerName is required');
+    }
+    if (!blobPath) {
+      throw new BadRequestException('blobPath is required and cannot be empty');
+    }
+
+    const sasUrl = await this.subProjectService.generateDownloadSas(containerName, blobPath);
+    console.log(sasUrl);
+    return { sasUrl };
+  }
+
+  @Post('subproject/downloadzipsas')
+  async generateFolderDownload(@Body() body: { containerName: string; folderPath: string }) {
+    const { containerName, folderPath } = body;
+
+    if (!containerName) {
+      throw new BadRequestException('containerName is required');
+    }
+    if (!folderPath) {
+      throw new BadRequestException('folderPath is required and cannot be empty');
+    }
+    const sasUrls = await this.subProjectService.generateDownloadSasForFolder(containerName, folderPath);
+    return { sasUrls };
+  }
+  
 }
