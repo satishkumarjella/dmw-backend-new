@@ -26,6 +26,9 @@ export class Question extends Document {
   @Prop({ type: Types.ObjectId, ref: 'SubProject' })
   subProject: string;
 
+  @Prop({ type: Types.ObjectId, ref: 'Project' })
+  project: string;
+
   @Prop()
   blobFolder: string;
 

@@ -6,12 +6,14 @@ import { SubProject, SubProjectSchema } from '../schemas/subproject.schema';
 import { QuestionController } from './question.controller';
 import { SubProjectModule } from '../subproject/subproject.module';
 import { AuthModule } from '../auth/auth.module';
+import { Project, ProjectSchema } from 'src/schemas/project.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Question.name, schema: QuestionSchema },
       { name: SubProject.name, schema: SubProjectSchema },
+      { name: Project.name, schema: ProjectSchema },
       { name: 'Bulletin', schema: QuestionSchema },
     ]),
     AuthModule,

@@ -11,8 +11,8 @@ export class QuestionController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Request() req, @Body() body: { text: string; subProjectId: string, file: Express.Multer.File }): Promise<Question> {
-    return this.questionService.create(req.user._id, body.text, body.subProjectId, body.file);
+  async create(@Request() req, @Body() body: { text: string; subProjectId: string, projectId: string, file: Express.Multer.File }): Promise<Question> {
+    return this.questionService.create(req.user._id, body.text, body.subProjectId, body.projectId, body.file);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -67,6 +67,6 @@ export class QuestionController {
     @Body() body: any,
     @Request() req
   ): Promise<Question> {
-    return this.questionService.create(req.user._id, body.text, body.subProjectId, file)
+    return this.questionService.create(req.user._id, body.text, body.subProjectId, body.projectId, file)
   }
 }

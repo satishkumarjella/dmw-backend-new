@@ -26,14 +26,14 @@ export class QuestionService {
       this.containerClient = this.blobServiceClient.getContainerClient(containerName);
   }
 
-  async create(userId: string, text: string, subProjectId: string, file: Express.Multer.File): Promise<Question> {
+  async create(userId: string, text: string, subProjectId: string, projectId: string, file: Express.Multer.File): Promise<Question> {
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
     let fileName = '';
     if (file) {
       fileName = await this.uploadQuestionFile(file, subProjectId);
     }
-    const question: any = new this.questionModel({ text, user: userId, subProject: subProjectId, blobFolder: fileName });
+    const question: any = new this.questionModel({ text, user: userId, subProject: subProjectId, projectId: projectId, blobFolder: fileName });
     await question.save();
     subProject.questions.push(question._id);
     await subProject.save();
