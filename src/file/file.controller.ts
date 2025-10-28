@@ -21,7 +21,8 @@ export class FileController {
     @Param('subProjectId') subProjectId: string,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ message: string }> {
-    if (req.user.role !== 'admin') {
+    console.log(req.user)
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') {
       throw new UnauthorizedException('Admins only');
     }
     // Verify user has access to subproject
@@ -91,7 +92,7 @@ export class FileController {
   @UseGuards(JwtAuthGuard)
   @Delete(':subProjectId/:id')
   async delete(@Request() req, @Param('subProjectId') subProjectId: string, @Param('id') id: string): Promise<{ message: string }> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.fileService.deleteFile(subProjectId, id);
   }
 

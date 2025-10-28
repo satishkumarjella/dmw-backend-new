@@ -43,7 +43,7 @@ export class SubProjectService {
   }
 
   async findByProject(projectId: string, user: any): Promise<SubProject[]> {
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'superAdmin') {
       return this.subProjectModel.find({ project: projectId }).exec();
     }
     return this.subProjectModel.find({ $and: [{ project: projectId }, { $or: [{ isPublic: true }, { _id: { $in: user.subProjects } }] }] }).exec();
@@ -56,7 +56,7 @@ export class SubProjectService {
   }
 
   async findAll(user: any): Promise<SubProject[]> {
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'superAdmin') {
       return this.subProjectModel.find().exec();
     }
     return this.subProjectModel.find({ _id: { $in: user.subProjects } }).exec();
@@ -103,7 +103,7 @@ export class SubProjectService {
   }
 
   async hasAccess(subProjectId: string, user: any): Promise<boolean> {
-    if (user.role === 'admin') return true;
+    if (user.role === 'admin' || user.role === 'superAdmin') return true;
     return user.subProjects.some((id: string) => id.toString() === subProjectId);
   }
 

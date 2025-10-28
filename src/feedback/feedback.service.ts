@@ -26,7 +26,7 @@ export class FeedbackService {
   }
 
   async findBySubProject(subProjectId: string, user: any): Promise<Feedback[]> {
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'superAdmin') {
       return this.feedbackModel.find({ subProject: subProjectId }).populate('user').exec();
     }
     return this.feedbackModel.find({ subProject: subProjectId, user: user._id }).populate('user').exec();

@@ -30,7 +30,7 @@ export class ProjectService {
   }
 
   async findAll(user: any): Promise<Project[]> {
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'superAdmin') {
       return this.projectModel.find().exec();
     }
     return this.projectModel.find({ _id: { $in: user.projects } }).exec();

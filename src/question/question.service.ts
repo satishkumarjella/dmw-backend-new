@@ -50,7 +50,7 @@ export class QuestionService {
   }
 
   async findBySubProject(subProjectId: string, user: any): Promise<Question[]> {
-    if (user.role === 'admin') {
+    if (user.role === 'admin' || user.role === 'superAdmin') {
       return this.questionModel.find({ subProject: subProjectId }).populate('user', 'email company firstName lastName').exec();
     }
     return this.questionModel.find({ subProject: subProjectId, user: user._id }).populate('user', 'email company firstName lastName').exec();

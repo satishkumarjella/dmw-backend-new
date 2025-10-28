@@ -17,7 +17,7 @@ export class SubProjectController {
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(@Request() req, @Body() body: { name: string; projectId: string }): Promise<SubProject> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.subProjectService.create(body.name, body.projectId);
   }
 
@@ -30,7 +30,7 @@ export class SubProjectController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/assign')
   async assignUser(@Request() req, @Param('id') id: string, @Body() body: { userId: string, projectId: string }): Promise<void> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.subProjectService.assignUser(id, body.userId, body.projectId);
   }
 
@@ -48,7 +48,7 @@ export class SubProjectController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   async delete(@Request() req, @Param('id') id: string): Promise<void> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.subProjectService.deleteSubProject(id);
   }
 

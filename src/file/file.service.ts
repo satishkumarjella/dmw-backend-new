@@ -211,7 +211,7 @@ export class FileService {
     }
 
     async deleteFolder(path: string, user: any) {
-        if (user.role !== 'admin') {
+        if (user.role !== 'admin' || user.role !== 'superAdmin') {
             throw new Error('Unauthorized');
         }
         for await (const blob of this.containerClient.listBlobsFlat({ prefix: path })) {

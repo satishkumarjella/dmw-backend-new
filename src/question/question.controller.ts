@@ -24,14 +24,14 @@ export class QuestionController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/answer')
   async answer(@Request() req, @Param('id') id: string, @Body() body: { answer: string }): Promise<Question> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.questionService.answer(id, { answeredBy: req.user.email, text: body.answer, answeredAt: new Date(), name: req.user.firstName + ' ' + req.user.lastName });
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('alerts')
   async findAlerts(@Request() req): Promise<Question[]> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.questionService.findAdminAlerts();
   }
 

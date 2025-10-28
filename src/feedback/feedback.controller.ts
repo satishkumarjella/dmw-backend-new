@@ -22,14 +22,14 @@ export class FeedbackController {
   @UseGuards(JwtAuthGuard)
   @Post(':id/status')
   async updateStatus(@Request() req, @Param('id') id: string, @Body() body: { status: 'approved' | 'rejected' }): Promise<Feedback> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.feedbackService.updateStatus(id, body.status);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('project/:projectId')
   async getProjectFeedback(@Request() req, @Param('projectId') projectId: string): Promise<any> {
-    if (req.user.role !== 'admin') throw new UnauthorizedException('Admins only');
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
     return this.feedbackService.getProjectFeedback(projectId);
   }
 }
