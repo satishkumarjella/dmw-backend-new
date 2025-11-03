@@ -33,7 +33,7 @@ export class QuestionService {
     if (file) {
       fileName = await this.uploadQuestionFile(file, subProjectId);
     }
-    const question: any = new this.questionModel({ text, user: userId, subProject: subProjectId, projectId: projectId, blobFolder: fileName });
+    const question: any = new this.questionModel({ text, user: userId, subProject: subProjectId, project: projectId, blobFolder: fileName });
     await question.save();
     subProject.questions.push(question._id);
     await subProject.save();
@@ -61,7 +61,7 @@ export class QuestionService {
   }
 
   async findAdminAlerts(): Promise<Question[]> {
-    return this.questionModel.find({ answer: null }).populate('user', 'email company').populate('subProject', 'name').exec();
+    return this.questionModel.find({ answer: null }).populate('user', 'email company').populate('subProject', 'name').populate('project').exec();
   }
 
   async uploadQuestionFile(file: Express.Multer.File, subProjectId: string): Promise<string> {
