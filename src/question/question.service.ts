@@ -33,6 +33,7 @@ export class QuestionService {
     if (file) {
       fileName = await this.uploadQuestionFile(file, subProjectId);
     }
+
     const question: any = new this.questionModel({ text, user: userId, subProject: subProjectId, project: projectId, blobFolder: fileName });
     await question.save();
     subProject.questions.push(question._id);

@@ -73,6 +73,12 @@ export class User extends Document {
 
   @Prop()
   trade?: string;
+
+  @Prop()
+  resetPasswordToken?: String;
+
+  @Prop()
+  resetPasswordExpires: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

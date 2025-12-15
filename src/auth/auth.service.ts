@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -13,6 +14,9 @@ import { User } from '../schemas/user.schema';
 import { SubProject } from '../schemas/subproject.schema';
 import * as ExcelJS from 'exceljs';
 import { Buffer } from 'buffer'; // Explicitly import Node.js Buffer
+import { randomBytes } from 'crypto';
+import { MailerService } from '@nestjs-modules/mailer';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +24,7 @@ export class AuthService {
     @InjectModel('User') public userModel: Model<User>,
     @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
     private jwtService: JwtService,
+    private mailerService: MailerService,
   ) {}
 
   async register(
@@ -64,32 +69,13 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<any> {
     const user = await this.userModel.findOne({ email });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      throw new UnauthorizedException('user_not_found');
+    }
+    if (user && !(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('wrong_password');
     }
     return this.generateToken(user);
-  }
-
-  async forgotPassword(email: string): Promise<void> {
-    const user = await this.userModel.findOne({ email });
-    if (!user) throw new Error('User not found');
-    const resetToken = uuidv4();
-    user.resetToken = resetToken;
-    user.resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour expiry
-    await user.save();
-    // Simulate sending email with reset link
-  }
-
-  async resetPassword(token: string, newPassword: string): Promise<void> {
-    const user = await this.userModel.findOne({
-      resetToken: token,
-      resetTokenExpiry: { $gt: new Date() },
-    });
-    if (!user) throw new Error('Invalid or expired token');
-    user.password = await bcrypt.hash(newPassword, 10);
-    user.resetToken = undefined;
-    user.resetTokenExpiry = undefined;
-    await user.save();
   }
 
   private generateToken(user: User): any {
@@ -224,7 +210,7 @@ export class AuthService {
         'zipcode',
         'role',
         'trade',
-        'termsAccepted'
+        'termsAccepted',
       ];
       const sanitizedFilter = Object.keys(filter).reduce((acc, key) => {
         if (allowedFields.includes(key)) {
@@ -244,19 +230,26 @@ export class AuthService {
 
       return users;
     } catch (error) {
-      throw new InternalServerErrorException(`Failed to filter users: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to filter users: ${error.message}`,
+      );
     }
   }
 
   async getUserById(id: string): Promise<User> {
     try {
-      const user = await this.userModel.findById(id).select('-password -signature').exec();
+      const user = await this.userModel
+        .findById(id)
+        .select('-password -signature')
+        .exec();
       if (!user) {
         throw new NotFoundException('User not found');
       }
       return user;
     } catch (error) {
-      throw new InternalServerErrorException(`Failed to fetch user: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to fetch user: ${error.message}`,
+      );
     }
   }
 
@@ -307,7 +300,7 @@ export class AuthService {
           zipcode: user.zipcode,
           role: user.role,
           trade: user.trade,
-          termsAccepted: user.termsAccepted
+          termsAccepted: user.termsAccepted,
         });
       });
 
@@ -320,7 +313,73 @@ export class AuthService {
       return Buffer.from(arrayBuffer);
     } catch (error) {
       console.error('Excel export error:', error);
-      throw new InternalServerErrorException(`Failed to export users to Excel: ${error.message}`);
+      throw new InternalServerErrorException(
+        `Failed to export users to Excel: ${error.message}`,
+      );
     }
+  }
+
+  async forgotPassword(email: string) {
+    try {
+      const user = await this.userModel.findOne({ email });
+      if (!user) {
+        return { message: 'If the email exists, a reset link has been sent.' };
+      }
+
+      const token = randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 60 * 60 * 1000);
+      console.log(token, expires)
+      await this.userModel.updateOne(
+        { email },
+        { resetPasswordToken: token, resetPasswordExpires: expires },
+      );
+
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+      const resetUrl = `${frontendUrl}/forgot-password?token=${token}`;
+
+      // Test email first
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Password Reset Request',
+        html: `
+        <h2>Password Reset</h2>
+        <p>Hello ${user.firstName || 'User'},</p>
+        <p>Click to reset:</p>
+        <a href="${resetUrl}" style="background:#007bff;color:white;padding:12px 24px;text-decoration:none;border-radius:5px;">Reset Password</a>
+        <p><small>Expires in 1 hour.</small></p>
+      `,
+      });
+
+      console.log(`✅ Reset email sent to ${email}`);
+      return { message: 'Password reset link sent!' };
+    } catch (error) {
+      console.error('❌ Forgot password failed:', error.message);
+      // Never reveal email exists
+      return { message: 'If the email exists, a reset link has been sent.' };
+    }
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    const user = await this.userModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await this.userModel.updateOne(
+      { _id: user._id },
+      {
+        password: hashed,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+      },
+    );
+
+    return { message: 'Password reset successfully' };
   }
 }
