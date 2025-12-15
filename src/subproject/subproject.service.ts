@@ -1,7 +1,17 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { BlobSASPermissions, BlobServiceClient, SASProtocol, StorageSharedKeyCredential, generateBlobSASQueryParameters } from '@azure/storage-blob';
+import {
+  BlobSASPermissions,
+  BlobServiceClient,
+  SASProtocol,
+  StorageSharedKeyCredential,
+  generateBlobSASQueryParameters,
+} from '@azure/storage-blob';
 import { v4 as uuidv4 } from 'uuid';
 import { Project } from '../schemas/project.schema';
 import { SubProject } from '../schemas/subproject.schema';
@@ -13,21 +23,22 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class SubProjectService {
   private blobServiceClient: any;
-  private containerClient : any;
+  private containerClient: any;
 
   constructor(
     @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
     @InjectModel('Project') private projectModel: Model<Project>,
     @InjectModel('User') private userModel: Model<User>,
-    private configService: ConfigService
+    private configService: ConfigService,
   ) {
-      const connString : any = this.configService.get<string>('BLOB_CONNECTION_STRING');
-      const containerName: any = this.configService.get<string>('BLOB_CONTAINER');
-      this.blobServiceClient = BlobServiceClient.fromConnectionString(
-        connString
-      );
-      this.containerClient = this.blobServiceClient.getContainerClient(containerName);
-   }
+    const connString: any = this.configService.get<string>(
+      'BLOB_CONNECTION_STRING',
+    );
+    const containerName: any = this.configService.get<string>('BLOB_CONTAINER');
+    this.blobServiceClient = BlobServiceClient.fromConnectionString(connString);
+    this.containerClient =
+      this.blobServiceClient.getContainerClient(containerName);
+  }
 
   async create(name: string, projectId: string): Promise<SubProject> {
     const project = await this.projectModel.findById(projectId);
@@ -35,7 +46,13 @@ export class SubProjectService {
     const subProjectId = uuidv4();
     const blobFolder = `${project.blobFolder}/${subProjectId}`;
     await this.containerClient.createIfNotExists();
-    const subProject: any = new this.subProjectModel({ name, project: projectId, blobFolder, questions: [], feedback: [] });
+    const subProject: any = new this.subProjectModel({
+      name,
+      project: projectId,
+      blobFolder,
+      questions: [],
+      feedback: [],
+    });
     await subProject.save();
     project.subProjects.push(subProject._id);
     await project.save();
@@ -46,7 +63,14 @@ export class SubProjectService {
     if (user.role === 'admin' || user.role === 'superAdmin') {
       return this.subProjectModel.find({ project: projectId }).exec();
     }
-    return this.subProjectModel.find({ $and: [{ project: projectId }, { $or: [{ isPublic: true }, { _id: { $in: user.subProjects } }] }] }).exec();
+    return this.subProjectModel
+      .find({
+        $and: [
+          { project: projectId },
+          { $or: [{ isPublic: true }, { _id: { $in: user.subProjects } }] },
+        ],
+      })
+      .exec();
   }
 
   async findById(subProjectId: string): Promise<SubProject> {
@@ -62,7 +86,10 @@ export class SubProjectService {
     return this.subProjectModel.find({ _id: { $in: user.subProjects } }).exec();
   }
 
-  async updateSubProject(subProjectId: string, name: string): Promise<SubProject> {
+  async updateSubProject(
+    subProjectId: string,
+    name: string,
+  ): Promise<SubProject> {
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
     subProject.name = name;
@@ -72,7 +99,9 @@ export class SubProjectService {
   async deleteSubProject(subProjectId: string): Promise<void> {
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
-    for await (const blob of this.containerClient.listBlobsFlat({ prefix: subProject.blobFolder })) {
+    for await (const blob of this.containerClient.listBlobsFlat({
+      prefix: subProject.blobFolder,
+    })) {
       await this.containerClient.getBlockBlobClient(blob.name).delete();
     }
     await this.projectModel.updateOne(
@@ -86,7 +115,11 @@ export class SubProjectService {
     await subProject.deleteOne();
   }
 
-  async assignUser(subProjectId: string, userId: string, projectId: string): Promise<void> {
+  async assignUser(
+    subProjectId: string,
+    userId: string,
+    projectId: string,
+  ): Promise<void> {
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
     const project = await this.projectModel.findById(projectId);
@@ -104,13 +137,21 @@ export class SubProjectService {
 
   async hasAccess(subProjectId: string, user: any): Promise<boolean> {
     if (user.role === 'admin' || user.role === 'superAdmin') return true;
-    return user.subProjects.some((id: string) => id.toString() === subProjectId);
+    return user.subProjects.some(
+      (id: string) => id.toString() === subProjectId,
+    );
   }
 
   async removeUserFromSubProjects(userId: string): Promise<void> {
     await this.userModel.updateMany(
       { subProjects: { $exists: true } },
-      { $pull: { subProjects: { $in: (await this.userModel.findById(userId))?.subProjects } } },
+      {
+        $pull: {
+          subProjects: {
+            $in: (await this.userModel.findById(userId))?.subProjects,
+          },
+        },
+      },
     );
   }
 
@@ -119,7 +160,9 @@ export class SubProjectService {
     const buffers: Buffer[] = [];
 
     archive.on('data', (data) => buffers.push(data));
-    archive.on('error', (err) => { throw err; });
+    archive.on('error', (err) => {
+      throw err;
+    });
     const subProject = await this.subProjectModel.findById(folderPath);
     if (!subProject) throw new Error('SubProject not found');
     const prefix = `${subProject.blobFolder}/files/`;
@@ -138,7 +181,6 @@ export class SubProjectService {
       archive.on('error', reject);
     });
   }
-
 
   // async downloadFolderAsZip(subProjectId: string): Promise<Buffer> {
   //   const subProject = await this.subProjectModel.findById(subProjectId);
@@ -180,13 +222,19 @@ export class SubProjectService {
     await blockBlobClient.upload('', 0); // Zero-length blob for virtual folder
   }
 
-  async listItems(subproject: string, folder: string = ''): Promise<{ type: 'folder' | 'file'; name: string }[]> {
+  async listItems(
+    subproject: string,
+    folder: string = '',
+  ): Promise<{ type: 'folder' | 'file'; name: string }[]> {
     const prefix = `${subproject}/${folder}`;
     const items: { type: 'folder' | 'file'; name: string }[] = [];
     const iter = this.containerClient.listBlobsByHierarchy('/', { prefix });
     for await (const item of iter) {
       if (item.kind === 'prefix') {
-        items.push({ type: 'folder', name: item.name.replace(prefix, '').replace('/', '') });
+        items.push({
+          type: 'folder',
+          name: item.name.replace(prefix, '').replace('/', ''),
+        });
       } else {
         items.push({ type: 'file', name: item.name.replace(prefix, '') });
       }
@@ -209,7 +257,9 @@ export class SubProjectService {
   async deleteFolder(folderPath: string): Promise<void> {
     try {
       // List all blobs with the given folder prefix
-      const blobItems = this.containerClient.listBlobsFlat({ prefix: folderPath });
+      const blobItems = this.containerClient.listBlobsFlat({
+        prefix: folderPath,
+      });
       // Delete each blob
       for await (const blobItem of blobItems) {
         const blobClient = this.containerClient.getBlobClient(blobItem.name);
@@ -229,17 +279,21 @@ export class SubProjectService {
     await blockBlobClient.uploadData(file.buffer);
   }
 
-  async makeSubProjectPublic(subProjectId: any, isChecked: any, projectId: any) {
+  async makeSubProjectPublic(
+    subProjectId: any,
+    isChecked: any,
+    projectId: any,
+  ) {
     if (isChecked == 'true') {
       await this.userModel.updateMany(
-        { role: 'user'},
-        { $addToSet: { projects: projectId, subProjects: subProjectId }} 
-      )
+        { role: 'user' },
+        { $addToSet: { projects: projectId, subProjects: subProjectId } },
+      );
     } else {
       await this.userModel.updateMany(
-        { role: 'user'},
-        { $pull: { subProjects: subProjectId }} 
-      )
+        { role: 'user' },
+        { $pull: { subProjects: subProjectId } },
+      );
     }
     const subProject = await this.subProjectModel.findById(subProjectId);
     if (!subProject) throw new Error('SubProject not found');
@@ -247,10 +301,16 @@ export class SubProjectService {
     return subProject.save();
   }
 
-  async generateUploadSas(containerName: string, blobName: string): Promise<string> {
+  async generateUploadSas(
+    containerName: string,
+    blobName: string,
+  ): Promise<string> {
     const accountName = this.configService.get('AZURE_STORAGE_ACCOUNT_NAME');
     const accountKey = this.configService.get('AZURE_STORAGE_ACCOUNT_KEY');
-    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+    const sharedKeyCredential = new StorageSharedKeyCredential(
+      accountName,
+      accountKey,
+    );
     console.log(accountName);
     const blobServiceClient = new BlobServiceClient(
       `https://${accountName}.blob.core.windows.net`,
@@ -272,18 +332,27 @@ export class SubProjectService {
       protocol: SASProtocol.Https,
     };
 
-    const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+    const sasToken = generateBlobSASQueryParameters(
+      sasOptions,
+      sharedKeyCredential,
+    ).toString();
     return `${blobClient.url}?${sasToken}`;
   }
 
-  async generateDownloadSas(containerName: string, blobPath: string): Promise<string> {
+  async generateDownloadSas(
+    containerName: string,
+    blobPath: string,
+  ): Promise<string> {
     if (!blobPath) {
       throw new Error('blobPath cannot be undefined or empty');
     }
 
     const accountName = this.configService.get('AZURE_STORAGE_ACCOUNT_NAME');
     const accountKey = this.configService.get('AZURE_STORAGE_ACCOUNT_KEY');
-    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+    const sharedKeyCredential = new StorageSharedKeyCredential(
+      accountName,
+      accountKey,
+    );
 
     const blobServiceClient = new BlobServiceClient(
       `https://${accountName}.blob.core.windows.net`,
@@ -305,11 +374,17 @@ export class SubProjectService {
       protocol: SASProtocol.Https,
     };
 
-    const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+    const sasToken = generateBlobSASQueryParameters(
+      sasOptions,
+      sharedKeyCredential,
+    ).toString();
     return `${blobClient.url}?${sasToken}`;
   }
 
-  async generateDownloadSasForFolder(containerName: string, folderPath: string): Promise<{ blobPath: string; sasUrl: string }[]> {
+  async generateDownloadSasForFolder(
+    containerName: string,
+    folderPath: string,
+  ): Promise<{ blobPath: string; sasUrl: string }[]> {
     if (!folderPath) {
       throw new Error('folderPath cannot be undefined or empty');
     }
@@ -321,7 +396,10 @@ export class SubProjectService {
       throw new Error('Azure storage credentials are missing');
     }
 
-    const sharedKeyCredential = new StorageSharedKeyCredential(accountName, accountKey);
+    const sharedKeyCredential = new StorageSharedKeyCredential(
+      accountName,
+      accountKey,
+    );
     const blobServiceClient = new BlobServiceClient(
       `https://${accountName}.blob.core.windows.net`,
       sharedKeyCredential,
@@ -348,7 +426,10 @@ export class SubProjectService {
         protocol: SASProtocol.Https,
       };
 
-      const sasToken = generateBlobSASQueryParameters(sasOptions, sharedKeyCredential).toString();
+      const sasToken = generateBlobSASQueryParameters(
+        sasOptions,
+        sharedKeyCredential,
+      ).toString();
       sasUrls.push({
         blobPath: blob.name,
         sasUrl: `${blobClient.url}?${sasToken}`,
@@ -360,5 +441,98 @@ export class SubProjectService {
     }
     return sasUrls;
   }
-}
 
+  async submitBid(
+    subProjectId: string,
+    userId: string,
+    bidData: { bidMessage: string; amount?: number },
+  ): Promise<{ message: string; bidId: string }> {
+    const result = await this.subProjectModel.findByIdAndUpdate(
+      subProjectId,
+      {
+        $push: {
+          bids: {
+            userId, // String auto-converts to ObjectId
+            bidMessage: bidData.bidMessage,
+            amount: bidData.amount ?? null,
+            status: 'pending',
+          },
+        },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
+
+    if (!result) throw new Error('SubProject not found');
+
+    // Verify user access
+    const user = await this.userModel.findById(userId);
+    if (!user?.subProjects.some((id) => id.toString() === subProjectId)) {
+      // Rollback
+      await this.subProjectModel.updateOne(
+        { _id: subProjectId },
+        { $pull: { bids: { userId } } },
+      );
+      throw new UnauthorizedException('No access to this subproject');
+    }
+
+    const newBid = result.bids[result.bids.length - 1];
+    return {
+      message: 'Bid submitted successfully',
+      bidId: newBid._id.toString(),
+    };
+  }
+
+  async updateBidStatus(
+    subProjectId: string,
+    bidId: string,
+    updateData: { status: 'accepted' | 'rejected'; adminNote?: string },
+  ): Promise<{ message: string }> {
+    const result = await this.subProjectModel.findByIdAndUpdate(
+      subProjectId,
+      {
+        $set: {
+          [`bids.${bidId}.status`]: updateData.status,
+          [`bids.${bidId}.updatedAt`]: new Date(),
+        },
+      },
+      { new: true },
+    );
+
+    if (!result) throw new Error('SubProject not found');
+
+    // Verify bid exists
+    const bidExists = result.bids.some(
+      (bid: any) => bid._id.toString() === bidId,
+    );
+    if (!bidExists) throw new Error('Bid not found');
+
+    return { message: 'Bid status updated' };
+  }
+
+  async getSubprojectBids(subProjectId: string, user: any): Promise<any[]> {
+    const subProject = await this.subProjectModel.findById(subProjectId);
+    if (!subProject) throw new Error('SubProject not found');
+
+    // Users see only their bid + public info; admins see all
+    if (user.role === 'admin' || user.role === 'superAdmin') {
+      return subProject.bids;
+    }
+    return subProject.bids.filter(
+      (bid) => bid.userId.toString() === user._id.toString(),
+    );
+  }
+
+  async getAllBids(status?: string): Promise<any[]> {
+    const query: any = status
+      ? { 'bids.status': status }
+      : { 'bids.0': { $exists: true } };
+    return this.subProjectModel
+      .find(query)
+      .populate('project', 'name')
+      .select('name project bids')
+      .exec();
+  }
+}
