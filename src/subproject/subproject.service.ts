@@ -477,11 +477,10 @@ export class SubProjectService {
       );
       throw new UnauthorizedException('No access to this subproject');
     }
-
-    const newBid = result.bids[result.bids.length - 1];
+    const newBidId = (result.bids[result.bids.length - 1] as any)._id.toString();
     return {
       message: 'Bid submitted successfully',
-      bidId: newBid._id.toString(),
+      bidId: newBidId ,
     };
   }
 
