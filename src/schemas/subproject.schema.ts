@@ -1,5 +1,6 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Types, Document } from 'mongoose';
+import { BidDecision, BidDecisionSchema } from './biddecision.schema';
 // Embedded Bid document
 export class Bid extends Document {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
@@ -29,10 +30,10 @@ export class SubProject extends Document {
   project: string;
 
   @Prop({ required: true })
-  blobFolder: string; // e.g., projects/projectId/subprojectId
+  blobFolder: string;
 
   @Prop()
-  isPublic: boolean; // e.g., projects/projectId/subprojectId
+  isPublic: boolean;
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Question' }] })
   questions: string[];
@@ -42,7 +43,10 @@ export class SubProject extends Document {
 
   @Prop({ type: [BidSchema], default: [] })
   bids: Bid[];
+
+  // NEW: Add this field for Bid/NoBid tracking
+  @Prop({ type: [BidDecisionSchema], default: [] })
+  bidDecisions: BidDecision[];
 }
 
 export const SubProjectSchema = SchemaFactory.createForClass(SubProject);
-

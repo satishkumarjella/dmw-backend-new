@@ -7,6 +7,7 @@ import { User, UserSchema } from '../schemas/user.schema';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { JwtStrategy } from './jwt/jwt-strategy';
 import { SubProject, SubProjectSchema } from '../schemas/subproject.schema';
+import { MailModule } from 'src/mail.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SubProject, SubProjectSchema } from '../schemas/subproject.schema';
       signOptions: { expiresIn: '1h' },
       global: true
     }),
+    MailModule
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard],

@@ -1,10 +1,11 @@
 import {
   BadRequestException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   BlobSASPermissions,
   BlobServiceClient,
@@ -19,6 +20,7 @@ import { User } from '../schemas/user.schema';
 import * as archiver from 'archiver';
 import * as JSZip from 'jszip';
 import { ConfigService } from '@nestjs/config';
+import { BidDecision } from 'src/schemas/biddecision.schema';
 
 @Injectable()
 export class SubProjectService {
@@ -477,10 +479,12 @@ export class SubProjectService {
       );
       throw new UnauthorizedException('No access to this subproject');
     }
-    const newBidId = (result.bids[result.bids.length - 1] as any)._id.toString();
+    const newBidId = (
+      result.bids[result.bids.length - 1] as any
+    )._id.toString();
     return {
       message: 'Bid submitted successfully',
-      bidId: newBidId ,
+      bidId: newBidId,
     };
   }
 
@@ -533,5 +537,97 @@ export class SubProjectService {
       .populate('project', 'name')
       .select('name project bids')
       .exec();
+  }
+
+  // subproject.service.ts
+  async submitBidDecision(
+    subProjectId: string,
+    userId: Types.ObjectId,
+    payload: { decision: 'bid' | 'noBid'; reason?: string },
+  ): Promise<BidDecision> {
+    const session = await this.subProjectModel.startSession();
+    session.startTransaction();
+
+    try {
+      // Remove any existing decision from this user
+      await this.subProjectModel.updateOne(
+        { _id: subProjectId },
+        {
+          $pull: { bidDecisions: { userId } },
+          $push: {
+            bidDecisions: {
+              userId,
+              decision: payload.decision,
+              reason: payload.reason?.trim(),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          },
+        },
+        { session },
+      );
+
+      await session.commitTransaction();
+
+      // Return the new decision
+      const subProject = await this.subProjectModel
+        .findById(subProjectId)
+        .select('bidDecisions')
+        .populate('bidDecisions.userId', 'email firstName lastName')
+        .session(session);
+
+      return subProject!.bidDecisions.find(
+        (bd: any) => bd.userId.toString() === userId!.toString(),
+      )!;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+
+  async getBidStats(subProjectId: string) {
+    const subProject = await this.subProjectModel
+      .findById(subProjectId)
+      .select('bidDecisions')
+      .lean<{ bidDecisions: any[] }>(); // ✅ Type the lean result
+
+    if (!subProject) {
+      throw new NotFoundException('SubProject not found');
+    }
+
+    const decisions = subProject.bidDecisions || [];
+
+    // ✅ Filter VALID ObjectIds
+    const userIds = decisions
+      .map((d: any) => d.userId)
+      .filter((id: any) => id && typeof id === 'string' && id.length === 24)
+      .map((id: string) => new Types.ObjectId(id));
+
+    const uniqueUserIds = [...new Set(userIds.map((id) => id.toString()))];
+
+    let users: any[] = [];
+    let userMap = new Map<string, any>();
+
+    if (uniqueUserIds.length > 0) {
+      users = (await this.userModel
+        .find({ _id: { $in: uniqueUserIds } })
+        .select('email firstName lastName')
+        .lean()) as any[]; // ✅ Type assertion for lean users
+
+      userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
+    }
+
+    return {
+      bids: decisions.filter((d: any) => d.decision === 'bid').length,
+      noBids: decisions.filter((d: any) => d.decision === 'noBid').length,
+      breakdown: decisions.map((d: any) => ({
+        user: userMap.get(d.userId?.toString()) || { email: 'Unknown User' },
+        decision: d.decision as 'bid' | 'noBid',
+        reason: d.reason || '',
+        createdAt: (d.createdAt || new Date()).toISOString(),
+      })),
+    };
   }
 }

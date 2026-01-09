@@ -15,6 +15,7 @@ import {
   UploadedFile,
   BadRequestException,
   Patch,
+  Req,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { SubProjectService } from './subproject.service';
@@ -262,5 +263,33 @@ export class SubProjectController {
       throw new UnauthorizedException('Admins only');
     }
     return this.subProjectService.getAllBids(status);
+  }
+
+  @Post(':id/bid-decision')
+  async submitBidDecision(
+    @Param('id') id: string,
+    @Body() body: { decision: 'bid' | 'noBid'; reason?: string },
+    @Request() req: any, // contains user from auth guard
+  ) {
+    const userId = req.user._id;
+
+    // Validate: noBid requires reason
+    if (body.decision === 'noBid' && !body.reason?.trim()) {
+      throw new BadRequestException('Reason is required for No Bid');
+    }
+
+    const result = await this.subProjectService.submitBidDecision(
+      id,
+      userId,
+      body,
+    );
+    return { message: 'Decision submitted', decision: result };
+  }
+
+  // GET /subprojects/:id/bid-stats
+  @Get(':id/bid-stats')
+  @UseGuards(JwtAuthGuard) // Only admins
+  async getBidStats(@Param('id') id: string) {
+    return this.subProjectService.getBidStats(id);
   }
 }

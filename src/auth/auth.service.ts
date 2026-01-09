@@ -319,44 +319,41 @@ export class AuthService {
     }
   }
 
+  // inside AuthService
   async forgotPassword(email: string) {
-    try {
-      const user = await this.userModel.findOne({ email });
-      if (!user) {
-        return { message: 'If the email exists, a reset link has been sent.' };
-      }
-
-      const token = randomBytes(32).toString('hex');
-      const expires = new Date(Date.now() + 60 * 60 * 1000);
-      console.log(token, expires)
-      await this.userModel.updateOne(
-        { email },
-        { resetPasswordToken: token, resetPasswordExpires: expires },
-      );
-
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
-      const resetUrl = `${frontendUrl}/forgot-password?token=${token}`;
-
-      // Test email first
-      await this.mailerService.sendMail({
-        to: email,
-        subject: 'Password Reset Request',
-        html: `
-        <h2>Password Reset</h2>
-        <p>Hello ${user.firstName || 'User'},</p>
-        <p>Click to reset:</p>
-        <a href="${resetUrl}" style="background:#007bff;color:white;padding:12px 24px;text-decoration:none;border-radius:5px;">Reset Password</a>
-        <p><small>Expires in 1 hour.</small></p>
-      `,
-      });
-
-      console.log(`✅ Reset email sent to ${email}`);
-      return { message: 'Password reset link sent!' };
-    } catch (error) {
-      console.error('❌ Forgot password failed:', error.message);
-      // Never reveal email exists
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
       return { message: 'If the email exists, a reset link has been sent.' };
     }
+
+    const token = randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000);
+
+    await this.userModel.updateOne(
+      { email },
+      { resetPasswordToken: token, resetPasswordExpires: expires },
+    );
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+    const resetUrl = `${frontendUrl}/new-password?token=${token}`;
+
+    const info = await this.mailerService.sendMail({
+      to: email,
+      subject: 'Password Reset Request',
+      html: `
+      <h2>Password Reset</h2>
+      <p>Hello ${user.firstName || 'User'},</p>
+      <p>Click to reset:</p>
+      <a href="${resetUrl}">Reset Password</a>
+    `,
+    });
+
+    // For Ethereal: log preview URL
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const nodemailer = require('nodemailer');
+    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+
+    return { message: 'Password reset link sent!' };
   }
 
   async resetPassword(token: string, newPassword: string) {
