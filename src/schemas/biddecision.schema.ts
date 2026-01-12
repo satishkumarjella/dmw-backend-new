@@ -3,13 +3,18 @@ import { Document, Types } from 'mongoose';
 
 // Embedded BidDecision document - add this to your subproject schema file
 export class BidDecision extends Document {
-  @Prop({ type: Types.ObjectId, ref: 'User', required: true, index: true })
-  userId: Types.ObjectId;
-
   @Prop({ 
-    enum: ['bid', 'noBid'], 
-    required: true,
+    type: Types.ObjectId,  // ✅ Remove the nested object
+    ref: 'User', 
+    required: true, 
     index: true 
+  })
+  userId: Types.ObjectId;  // ✅ Simple ObjectId
+
+  @Prop({
+    enum: ['bid', 'noBid'],
+    required: true,
+    index: true
   })
   decision: 'bid' | 'noBid';
 

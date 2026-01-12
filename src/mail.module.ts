@@ -11,12 +11,12 @@ import * as nodemailer from 'nodemailer';
         const testAccount = await nodemailer.createTestAccount();
         return {
           transport: {
-            host: 'smtp.gmail.com',
+            host: 'outbound-us1.ppe-hosted.com',
             port: 587,
             secure: false,
-            auth: { user: testAccount.user, pass: testAccount.pass },
+            auth: { user: 'noreply-test@dmwcc.com' , pass: 'qcaYjru@WaKuGGm!kCer!OcG2Zs#urgr' },
           },
-          defaults: { from: '"Your App" <no-reply@yourapp.com>' },
+          defaults: { from: '"Your App" <noreply-test@dmwcc.com>' },
           // Completely remove the 'template' section to disable templating
           // No adapter, no dir, no Handlebars or any other engine
         };

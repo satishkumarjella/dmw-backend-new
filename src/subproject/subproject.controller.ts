@@ -24,13 +24,14 @@ import { FileService } from '../file/file.service';
 import { JwtAuthGuard } from 'src/auth/jwt/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Logger } from '@nestjs/common';
+import { Types } from 'mongoose';
 
 @Controller('subprojects')
 export class SubProjectController {
   constructor(
     private subProjectService: SubProjectService,
     private fileService: FileService,
-  ) {}
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Post()
@@ -265,29 +266,32 @@ export class SubProjectController {
     return this.subProjectService.getAllBids(status);
   }
 
-  @Post(':id/bid-decision')
+  @UseGuards(JwtAuthGuard)
+  @Post('bid-decision/:id')
   async submitBidDecision(
     @Param('id') id: string,
     @Body() body: { decision: 'bid' | 'noBid'; reason?: string },
-    @Request() req: any, // contains user from auth guard
+    @Request() req: any,
   ) {
-    const userId = req.user._id;
+    try {
+      const userId = new Types.ObjectId(req.user._id); // ✅ ObjectId
 
-    // Validate: noBid requires reason
-    if (body.decision === 'noBid' && !body.reason?.trim()) {
-      throw new BadRequestException('Reason is required for No Bid');
+      if (body.decision === 'noBid' && !body.reason?.trim()) {
+        throw new BadRequestException('Reason is required for No Bid');
+      }
+
+      const result = await this.subProjectService.submitBidDecision(id, userId, body);
+      return { message: 'Decision submitted', decision: result };
+    } catch (error: any) {
+      if (error instanceof Types.ObjectId) {
+        throw new BadRequestException('Invalid user ID');
+      }
+      throw error;
     }
-
-    const result = await this.subProjectService.submitBidDecision(
-      id,
-      userId,
-      body,
-    );
-    return { message: 'Decision submitted', decision: result };
   }
 
   // GET /subprojects/:id/bid-stats
-  @Get(':id/bid-stats')
+  @Get('bid-stats/:id')
   @UseGuards(JwtAuthGuard) // Only admins
   async getBidStats(@Param('id') id: string) {
     return this.subProjectService.getBidStats(id);

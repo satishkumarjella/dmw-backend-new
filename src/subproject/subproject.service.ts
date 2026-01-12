@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Collection, Model, Types } from 'mongoose';
 import {
   BlobSASPermissions,
   BlobServiceClient,
@@ -539,59 +539,73 @@ export class SubProjectService {
       .exec();
   }
 
-  // subproject.service.ts
   async submitBidDecision(
     subProjectId: string,
     userId: Types.ObjectId,
     payload: { decision: 'bid' | 'noBid'; reason?: string },
-  ): Promise<BidDecision> {
-    const session = await this.subProjectModel.startSession();
-    session.startTransaction();
+  ): Promise<any> {
+    const subProjectObjectId = new Types.ObjectId(subProjectId);
 
-    try {
-      // Remove any existing decision from this user
-      await this.subProjectModel.updateOne(
-        { _id: subProjectId },
+    // Raw MongoDB update (works!)
+    const collection: Collection = this.subProjectModel.collection;
+    const result = await collection.updateOne(
+      { _id: subProjectObjectId },
+      [
         {
-          $pull: { bidDecisions: { userId } },
-          $push: {
+          $set: {
             bidDecisions: {
-              userId,
-              decision: payload.decision,
-              reason: payload.reason?.trim(),
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          },
-        },
-        { session },
-      );
+              $concatArrays: [
+                {
+                  $filter: {
+                    input: { $ifNull: ['$bidDecisions', []] },
+                    cond: { $ne: ['$$this.userId', userId] }
+                  }
+                },
+                [{
+                  userId: userId,
+                  decision: payload.decision,
+                  reason: payload.reason?.trim() || '',
+                  createdAt: new Date(),
+                  updatedAt: new Date()
+                }]
+              ]
+            }
+          }
+        }
+      ]
+    );
 
-      await session.commitTransaction();
-
-      // Return the new decision
-      const subProject = await this.subProjectModel
-        .findById(subProjectId)
-        .select('bidDecisions')
-        .populate('bidDecisions.userId', 'email firstName lastName')
-        .session(session);
-
-      return subProject!.bidDecisions.find(
-        (bd: any) => bd.userId.toString() === userId!.toString(),
-      )!;
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
+    if (!result.modifiedCount && !result.upsertedCount) {
+      throw new NotFoundException('SubProject not found');
     }
+
+    // ✅ Manual user lookup (no populate needed)
+    const user = await this.userModel
+      .findById(userId)
+      .select('email firstName lastName')
+      .lean();
+
+    // Fetch just the new decision
+    const subProject = await this.subProjectModel
+      .findById(subProjectObjectId)
+      .select('bidDecisions')
+      .lean();
+
+    const newDecision = (subProject?.bidDecisions || [])
+      .filter((bd: any) => bd.userId.toString() === userId.toString())
+      .slice(-1)[0]; // Last one (newest)
+
+    return {
+      ...newDecision,
+      user: user || { email: 'Unknown User' },
+    };
   }
 
   async getBidStats(subProjectId: string) {
     const subProject = await this.subProjectModel
       .findById(subProjectId)
       .select('bidDecisions')
-      .lean<{ bidDecisions: any[] }>(); // ✅ Type the lean result
+      .lean();
 
     if (!subProject) {
       throw new NotFoundException('SubProject not found');
@@ -599,25 +613,23 @@ export class SubProjectService {
 
     const decisions = subProject.bidDecisions || [];
 
-    // ✅ Filter VALID ObjectIds
-    const userIds = decisions
-      .map((d: any) => d.userId)
-      .filter((id: any) => id && typeof id === 'string' && id.length === 24)
-      .map((id: string) => new Types.ObjectId(id));
+    // Get all unique userIds
+    const uniqueUserIds = [...new Set(
+      decisions
+        .map((d: any) => d.userId)
+        .filter((id: any) => id && id.toString().length === 24)
+        .map((id: any) => id.toString())
+    )];
 
-    const uniqueUserIds = [...new Set(userIds.map((id) => id.toString()))];
+    // Manual lookup (works without schema fix)
+    const users = await this.userModel
+      .find({ _id: { $in: uniqueUserIds } })
+      .select('email firstName lastName')
+      .lean();
 
-    let users: any[] = [];
-    let userMap = new Map<string, any>();
-
-    if (uniqueUserIds.length > 0) {
-      users = (await this.userModel
-        .find({ _id: { $in: uniqueUserIds } })
-        .select('email firstName lastName')
-        .lean()) as any[]; // ✅ Type assertion for lean users
-
-      userMap = new Map(users.map((u: any) => [u._id.toString(), u]));
-    }
+    const userMap = new Map(
+      users.map((u: any) => [u._id.toString(), u])
+    );
 
     return {
       bids: decisions.filter((d: any) => d.decision === 'bid').length,
@@ -630,4 +642,5 @@ export class SubProjectService {
       })),
     };
   }
+
 }
