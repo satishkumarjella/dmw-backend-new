@@ -624,7 +624,7 @@ export class SubProjectService {
     // Manual lookup (works without schema fix)
     const users = await this.userModel
       .find({ _id: { $in: uniqueUserIds } })
-      .select('email firstName lastName')
+      .select('email firstName lastName company title phone city state')
       .lean();
 
     const userMap = new Map(

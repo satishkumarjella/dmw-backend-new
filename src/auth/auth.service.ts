@@ -25,7 +25,7 @@ export class AuthService {
     @InjectModel('SubProject') private subProjectModel: Model<SubProject>,
     private jwtService: JwtService,
     private mailerService: MailerService,
-  ) {}
+  ) { }
 
   async register(
     email: string,
@@ -341,12 +341,72 @@ export class AuthService {
       to: email,
       subject: 'Password Reset Request',
       html: `
-      <h2>Password Reset</h2>
-      <p>Hello ${user.firstName || 'User'},</p>
-      <p>Click to reset:</p>
-      <a href="${resetUrl}">Reset Password</a>
-    `,
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+<style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { text-align: center; padding: 30px 20px; background: white; color: #333; border-radius: 12px 12px 0 0; }
+    .content { padding: 40px 30px; background: #f8f9fa; border-radius: 0 0 12px 12px; }
+    .button { display: inline-block; background: #ff6900; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 24px 0; box-shadow: 0 4px 12px rgba(255,105,0,0.3); }
+    .button:hover { background: #e55a00; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(255,105,0,0.4); }
+    .requirements { background: #e7f3ff; border-left: 4px solid #ff6900; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+    .req-list { list-style: none; padding: 0; margin: 0; }
+    .req-item { padding: 8px 0; display: flex; align-items: center; }
+    .req-bullet { width: 8px; height: 8px; background: #ff6900; border-radius: 50%; margin-right: 12px; flex-shrink: 0; }
+    .footer { text-align: center; padding: 30px 20px; color: #666; font-size: 14px; border-top: 1px solid #eee; margin-top: 40px; }
+    @media (max-width: 480px) { .content { padding: 24px 20px; } .button { padding: 14px 24px; font-size: 15px; } }
+</style>
+
+</head>
+<body>
+  <div class="header">
+  <img src="${process.env.FRONTEND_URL} + '/assets/images/main-logo.png'"/>
+  </div>
+  
+  <div class="content">
+    <h2 style="color: #333; margin-bottom: 8px;">Hi ${user.firstName || 'User'},</h2>
+    
+    <p style="margin-bottom: 24px; font-size: 16px;">
+      We've received a request to reset your password. 
+      If you didn't make the request, please ignore this message. 
+      Otherwise, you can reset your password.
+    </p>
+    
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${resetUrl}" class="button" style="text-decoration: none; color:white">
+        Reset your password
+      </a>
+    </div>
+    
+    <div class="requirements">
+      <h4 style="margin: 0 0 16px 0; color: #007bff;">Password Requirements:</h4>
+      <ul class="req-list">
+        <li class="req-item">
+          <span class="req-bullet"></span>
+          Contain 8-60 Characters
+        </li>
+        <li class="req-item">
+          <span class="req-bullet"></span>
+          Contains at least one letter
+        </li>
+      </ul>
+    </div>
+    
+    <p style="font-size: 14px; color: #666; margin-top: 24px;">
+      If you didn't request this, please ignore this message.
+    </p>
+  </div>
+  
+  <div class="footer">
+    <p>Thanks,<br><strong>DMW</strong></p>
+  </div>
+</body>
+</html>
+  `,
     });
+
 
     // For Ethereal: log preview URL
     // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -378,5 +438,24 @@ export class AuthService {
     );
 
     return { message: 'Password reset successfully' };
+  }
+
+  async shareLink(toEmails: string[], shareLink: string, subject = 'Share this link', message = 'Check out this shared content:') {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+    const shareUrl = frontendUrl + '/layout/dashboard/' + shareLink;
+    const htmlContent = `
+      <h2>Shared Content</h2>
+      <p>${message}</p>
+      <a href="${shareUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Open Link</a>
+    `;
+
+    await this.mailerService.sendMail({
+      to: toEmails.join(','),  // Supports multiple: 'user1@example.com, user2@example.com'
+      // cc: 'cc@example.com',  // Optional
+      // bcc: ['bcc1@example.com', 'bcc2@example.com'],  // Optional
+      subject,
+      html: htmlContent,
+      text: `${message}\n${shareLink}`,  // Plain text fallback
+    });
   }
 }

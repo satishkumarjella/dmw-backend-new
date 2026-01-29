@@ -111,4 +111,10 @@ export class AuthController {
     }
     return this.authService.filterUsers(filter);
   }
+
+  @Post('users/shareSubProject')
+  async share(@Body() body: { emails: string[]; link: string }) {
+    await this.authService.shareLink(body.emails, body.link);
+    return { message: 'Emails sent successfully' };
+  }
 }
