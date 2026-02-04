@@ -440,22 +440,38 @@ export class AuthService {
     return { message: 'Password reset successfully' };
   }
 
-  async shareLink(toEmails: string[], shareLink: string, subject = 'Share this link', message = 'Check out this shared content:') {
+  async shareLink(
+    toEmails: string[],
+    shareLink: string,
+    subject = 'DMW proposal folder update',
+    message = 'DMW proposal folder has been updated. Use the attached link to download updated files.'
+  ) {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
-    const shareUrl = frontendUrl + '/layout/dashboard/' + shareLink;
+    const shareUrl = `${frontendUrl}/layout/dashboard/${shareLink}`;
+
     const htmlContent = `
-      <h2>Shared Content</h2>
-      <p>${message}</p>
-      <a href="${shareUrl}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Open Link</a>
-    `;
+    <p>Hello,</p>
+    <p>${message}</p>
+    <br/>
+    <p><strong>Jason Benson</strong></p>
+    <p><strong>Vice President of Sales and Estimating</strong></p>
+    <p><strong>C:</strong> 734-934-6857</p>
+    <p><strong>O:</strong> 734-288-4418</p>
+    <p><a href="mailto:jasonb@dmwcc.com">jasonb@dmwcc.com</a></p>
+    <br/>
+    <a href="${shareUrl}"
+       style="background-color:#007bff;color:#ffffff;padding:10px 20px;
+              text-decoration:none;border-radius:5px;display:inline-block;">
+      Open Link
+    </a>
+  `;
 
     await this.mailerService.sendMail({
-      to: toEmails.join(','),  // Supports multiple: 'user1@example.com, user2@example.com'
-      // cc: 'cc@example.com',  // Optional
-      // bcc: ['bcc1@example.com', 'bcc2@example.com'],  // Optional
+      to: toEmails.join(','),
       subject,
       html: htmlContent,
-      text: `${message}\n${shareLink}`,  // Plain text fallback
+      text: `${message}\n${shareUrl}`,
     });
   }
+
 }

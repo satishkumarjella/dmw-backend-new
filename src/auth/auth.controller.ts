@@ -5,7 +5,7 @@ import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Post('register')
   async register(@Body() body: { email: string, password: string, firstName: string, lastName: string, company: string, phone: string, title: string, companyAddress: string, city: string, state: string, zipcode: string, role: string, termsAccepted: boolean, signature: string, trade: string }) {
@@ -113,8 +113,11 @@ export class AuthController {
   }
 
   @Post('users/shareSubProject')
-  async share(@Body() body: { emails: string[]; link: string }) {
-    await this.authService.shareLink(body.emails, body.link);
+  async share(@Body() body: {
+    emails: string[], link: string, subject: string,
+    message: string
+  }) {
+    await this.authService.shareLink(body.emails, body.link, body.subject, body.message);
     return { message: 'Emails sent successfully' };
   }
 }
