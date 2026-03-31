@@ -35,6 +35,9 @@ export class Question extends Document {
   @Prop({ type: AnswerSchema })
   answer: Answer
 
+  @Prop({ default: false })
+  isRead: boolean;
+
   @Prop({ default: Date.now, type: Date })
   createdAt: Date;
 }
