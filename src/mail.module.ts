@@ -13,7 +13,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
             secure: false,
             auth: { user: 'noreply-test@dmwcc.com' , pass: 'qcaYjru@WaKuGGm!kCer!OcG2Zs#urgr' },
           },
-          defaults: { from: '"Your App" <noreply-test@dmwcc.com>' },
+          defaults: { from: '"Dearborn Mid-West Supplier RFQ Portal" <noreply-test@dmwcc.com>' },
           // Completely remove the 'template' section to disable templating
           // No adapter, no dir, no Handlebars or any other engine
         };

@@ -474,4 +474,44 @@ export class AuthService {
     });
   }
 
+  async sendQuestionAnsweredEmail(
+    user: User,
+    questionText: string,
+    link: string
+  ) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
+    const answerUrl = `${frontendUrl}/layout/dashboard/${link}`;
+
+    const briefDescription = questionText.length > 50 ? questionText.substring(0, 50) + '...' : questionText;
+
+    const htmlContent = `
+    <p>Dear ${user.firstName},</p>
+    <p>This is to inform you that your inquiry regarding "${briefDescription}" has now been answered.</p>
+    <p>You may review the full response at the following location: <a href="${answerUrl}">${answerUrl}</a>.</p>
+    <p>If further assistance is required, please don’t hesitate to contact the Dearborn Mid-West Estimating Team.</p>
+    <br/>
+    <p>Thank you,</p>
+    <p><strong>Dearborn Mid-West Estimating Team</strong></p>
+  `;
+
+    await this.mailerService.sendMail({
+      to: user.email,
+      subject: 'Your Question has been Answered',
+      html: htmlContent,
+    });
+  }
+
+  async removeProjectFromUsers(projectId: string, subProjectIds: string[]) {
+    if (subProjectIds && subProjectIds.length > 0) {
+      await this.userModel.updateMany(
+        { subProjects: { $in: subProjectIds } },
+        { $pull: { subProjects: { $in: subProjectIds } } },
+      );
+    }
+    return this.userModel
+      .updateMany({ projects: projectId }, { $pull: { projects: projectId } })
+      .exec();
+  }
+
+
 }

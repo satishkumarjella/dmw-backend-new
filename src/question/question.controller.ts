@@ -23,9 +23,18 @@ export class QuestionController {
 
   @UseGuards(JwtAuthGuard)
   @Post(':id/answer')
-  async answer(@Request() req, @Param('id') id: string, @Body() body: { answer: string }): Promise<Question> {
+  async answer(@Request() req, @Param('id') id: string, @Body() body: { answer: string, link: string }): Promise<Question> {
     if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') throw new UnauthorizedException('Admins only');
-    return this.questionService.answer(id, { answeredBy: req.user.email, text: body.answer, answeredAt: new Date(), name: req.user.firstName + ' ' + req.user.lastName });
+    return this.questionService.answer(id, { answeredBy: req.user.email, text: body.answer, answeredAt: new Date(), name: req.user.firstName + ' ' + req.user.lastName }, body.link);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('alerts/:id/read')
+  async markAsRead(@Request() req, @Param('id') id: string): Promise<Question> {
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') {
+      throw new UnauthorizedException('Admins only');
+    }
+    return this.questionService.markAsRead(id);
   }
 
   @UseGuards(JwtAuthGuard)
