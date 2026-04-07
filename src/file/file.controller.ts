@@ -19,7 +19,7 @@ export class FileController {
   async uploadFile(
     @Request() req,
     @Param('subProjectId') subProjectId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
   ): Promise<{ message: string }> {
     console.log(req.user)
     if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') {

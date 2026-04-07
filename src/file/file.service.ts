@@ -228,4 +228,9 @@ export class FileService {
         const downloaded = await this.streamToBuffer(downloadResponse.readableStreamBody);
         return downloaded;
     }
+
+    async readFileAsText(blobPath: string): Promise<string> {
+        const buffer = await this.downloadFile(blobPath);
+        return buffer.toString('utf-8');
+    }
 }
