@@ -45,5 +45,5 @@ jobs:
             cd '${{ secrets.SERVER_TARGET_DIR }}'
             npm install --omit=dev
             pm2 delete all || true
-            pm2 start dist/main.js --name "dmw-backend"
+            pm2 start dist/main.js -i max --name "dmw-backend"
             echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S systemctl restart nginx
