@@ -411,7 +411,6 @@ export class AuthService {
     // For Ethereal: log preview URL
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const nodemailer = require('nodemailer');
-    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
 
     return { message: 'Password reset link sent!' };
   }

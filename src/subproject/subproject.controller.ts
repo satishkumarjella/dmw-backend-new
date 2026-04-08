@@ -185,7 +185,6 @@ export class SubProjectController {
       containerName,
       blobPath,
     );
-    console.log(sasUrl);
     return { sasUrl };
   }
 

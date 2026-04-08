@@ -21,7 +21,6 @@ export class FileController {
     @Param('subProjectId') subProjectId: string,
     @UploadedFile() file: any,
   ): Promise<{ message: string }> {
-    console.log(req.user)
     if (req.user.role !== 'admin' && req.user.role !== 'superAdmin') {
       throw new UnauthorizedException('Admins only');
     }
@@ -61,8 +60,6 @@ export class FileController {
     if (!isValidObjectId(subProjectId)) {
       throw new HttpException('Invalid SubProject ID', HttpStatus.BAD_REQUEST);
     }
-  
-    console.log(subProjectId, body.path);
     const subProjects = await this.subProjectService.findByProject(
       (await this.subProjectService.findById(subProjectId)).project.toString(),
       req.user,

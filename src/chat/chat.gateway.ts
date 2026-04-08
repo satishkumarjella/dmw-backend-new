@@ -24,7 +24,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload = this.jwtService.verify(token);
       socket.data.user = payload;
       socket.join(payload.sub); // Join user's own ID for direct notifications
-      console.log(`User connected: ${socket.id} (${payload.username})`);
     } catch (error) {
       console.error(`Authentication failed for socket ${socket.id}: ${error.message}`);
       socket.emit('error', { message: 'Authentication failed' });

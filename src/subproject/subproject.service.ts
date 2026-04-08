@@ -266,9 +266,7 @@ export class SubProjectService {
       for await (const blobItem of blobItems) {
         const blobClient = this.containerClient.getBlobClient(blobItem.name);
         await blobClient.deleteIfExists();
-        console.log(`Deleted blob: ${blobItem.name}`);
       }
-      console.log(`All blobs in folder ${folderPath} deleted successfully.`);
     } catch (error: any) {
       console.error(`Error deleting folder ${folderPath}:`, error);
       throw new Error(`Failed to delete folder: ${error.message}`);
@@ -313,7 +311,6 @@ export class SubProjectService {
       accountName,
       accountKey,
     );
-    console.log(accountName);
     const blobServiceClient = new BlobServiceClient(
       `https://${accountName}.blob.core.windows.net`,
       sharedKeyCredential,
