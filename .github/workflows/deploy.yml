@@ -32,7 +32,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           source: "dist/,package.json,package-lock.json"
-          target: ${{ secrets.SERVER_TARGET_DIR }} # TODO: Update this to your actual server path
+          target: ${{ secrets.SERVER_TARGET_DIR }}
           overwrite: true
 
       - name: Install Prod Dependencies & Restart Server
@@ -42,7 +42,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            cd /path/to/your/app/directory # TODO: Update this to your actual server path
+            cd '${{ secrets.SERVER_TARGET_DIR }}'
             npm install --omit=dev
             pm2 delete all || true
             pm2 start dist/main.js --name "dmw-backend"
