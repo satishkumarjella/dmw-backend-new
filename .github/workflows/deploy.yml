@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master # Trigger on pushes to the main branch
+      - main
 
 jobs:
   deploy:
@@ -17,10 +18,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20' # Use your target Node.js version
+          node-version: '20'
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm install
+      - name: Install and Build
+        run: |
+          npm install
+          npm run build
 
       - name: Build Project
         run: npm run build
@@ -32,7 +38,7 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           source: "dist/,package.json,package-lock.json"
-          target: ${{ secrets.SERVER_TARGET_DIR }}
+          target: "/var/www/html/server/dmw-backend-new"  # Updated to your path
           overwrite: true
 
       - name: Install Prod Dependencies & Restart Server
@@ -42,8 +48,8 @@ jobs:
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
-            cd '${{ secrets.SERVER_TARGET_DIR }}'
+            cd /var/www/html/server/dmw-backend-new  # Updated to your path
             npm install --omit=dev
             pm2 delete all || true
-            pm2 start dist/main.js -i max --name "dmw-backend"
+            pm2 start dist/main.js --name "dmw-backend"
             echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S systemctl restart nginx
