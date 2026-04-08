@@ -104,7 +104,7 @@ export class FileService {
                         lastModified: properties.lastModified || new Date(),
                     });
                 } catch {
-                    continue; // Skip inaccessible blobs
+                    continue;
                 }
                 // }
             }
