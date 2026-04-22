@@ -6,6 +6,7 @@ import { FileService } from '../file/file.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import { User } from '../schemas/user.schema';
 import { SubProject } from '../schemas/subproject.schema';
+import { Project } from '../schemas/project.schema';
 
 @Injectable()
 export class NoticeBoardService {
@@ -13,6 +14,7 @@ export class NoticeBoardService {
     @InjectModel(NoticeBoard.name) private noticeBoardModel: Model<NoticeBoard>,
     @InjectModel(User.name) private userModel: Model<User>,
     @InjectModel(SubProject.name) private subProjectModel: Model<SubProject>,
+    @InjectModel(Project.name) private projectModel: Model<Project>,
     private fileService: FileService,
     private mailerService: MailerService,
   ) {}
@@ -106,13 +108,19 @@ export class NoticeBoardService {
 
     const subProject = await this.subProjectModel.findById(subProjectId).exec();
     const projectId = subProject ? subProject.project : '';
+    const project: any = projectId ? await this.projectModel.findById(projectId).exec() : null;
+    
     const fileName = notice.filePath ? notice.filePath.split('/').pop() : '';
     const projectLink = `${process.env.FRONTEND_URL || 'http://localhost:4200'}/layout/dashboard/${projectId}/${subProjectId}`;
+    const projectName = project ? project.name || project.title : 'Unknown Project';
+    const subProjectName = subProject ? (subProject as any).name : 'Unknown SubProject';
 
     const htmlContent = `
       <p>${payload.message || 'A notice has been posted.'}</p>
       <h3>${notice.title}</h3>
       <p>${notice.description}</p>
+      <p><strong>Customer:</strong> ${projectName}</p>
+      <p><strong>Project:</strong> ${subProjectName}</p>
       <p><strong>File Path:</strong> ${notice.filePath}</p>
       ${fileName ? `<p><strong>File:</strong> ${fileName}</p>` : ''}
       <br/>

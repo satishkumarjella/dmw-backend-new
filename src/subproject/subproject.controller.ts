@@ -16,6 +16,7 @@ import {
   BadRequestException,
   Patch,
   Req,
+  Put,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { SubProjectService } from './subproject.service';
@@ -85,6 +86,18 @@ export class SubProjectController {
     if (req.user.role !== 'admin' && req.user.role !== 'superAdmin')
       throw new UnauthorizedException('Admins only');
     return this.subProjectService.deleteSubProject(id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  async update(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { name: string },
+  ): Promise<SubProject> {
+    if (req.user.role !== 'admin' && req.user.role !== 'superAdmin')
+      throw new UnauthorizedException('Admins only');
+    return this.subProjectService.updateSubProject(id, body.name);
   }
 
   @Get()

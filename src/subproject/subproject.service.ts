@@ -93,7 +93,7 @@ export class SubProjectService {
     name: string,
   ): Promise<SubProject> {
     const subProject = await this.subProjectModel.findById(subProjectId);
-    if (!subProject) throw new Error('SubProject not found');
+    if (!subProject) throw new NotFoundException('SubProject not found');
     subProject.name = name;
     return subProject.save();
   }
