@@ -337,75 +337,79 @@ export class AuthService {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5000';
     const resetUrl = `${frontendUrl}/new-password?token=${token}`;
 
-    const info = await this.mailerService.sendMail({
-      to: email,
-      subject: 'Password Reset Request',
-      html: `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-<style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { text-align: center; padding: 30px 20px; background: white; color: #333; border-radius: 12px 12px 0 0; }
-    .content { padding: 40px 30px; background: #f8f9fa; border-radius: 0 0 12px 12px; }
-    .button { display: inline-block; background: #ff6900; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 24px 0; box-shadow: 0 4px 12px rgba(255,105,0,0.3); }
-    .button:hover { background: #e55a00; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(255,105,0,0.4); }
-    .requirements { background: #e7f3ff; border-left: 4px solid #ff6900; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
-    .req-list { list-style: none; padding: 0; margin: 0; }
-    .req-item { padding: 8px 0; display: flex; align-items: center; }
-    .req-bullet { width: 8px; height: 8px; background: #ff6900; border-radius: 50%; margin-right: 12px; flex-shrink: 0; }
-    .footer { text-align: center; padding: 30px 20px; color: #666; font-size: 14px; border-top: 1px solid #eee; margin-top: 40px; }
-    @media (max-width: 480px) { .content { padding: 24px 20px; } .button { padding: 14px 24px; font-size: 15px; } }
-</style>
-
-</head>
-<body>
-  <div class="header">
-  <img src="${process.env.FRONTEND_URL} + '/assets/images/main-logo.png'"/>
-  </div>
+    try {
+      const info = await this.mailerService.sendMail({
+        to: email,
+        subject: 'Password Reset Request',
+        html: `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8">
+  <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+      .header { text-align: center; padding: 30px 20px; background: white; color: #333; border-radius: 12px 12px 0 0; }
+      .content { padding: 40px 30px; background: #f8f9fa; border-radius: 0 0 12px 12px; }
+      .button { display: inline-block; background: #ff6900; color: white; padding: 16px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 24px 0; box-shadow: 0 4px 12px rgba(255,105,0,0.3); }
+      .button:hover { background: #e55a00; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(255,105,0,0.4); }
+      .requirements { background: #e7f3ff; border-left: 4px solid #ff6900; padding: 20px; margin: 24px 0; border-radius: 0 8px 8px 0; }
+      .req-list { list-style: none; padding: 0; margin: 0; }
+      .req-item { padding: 8px 0; display: flex; align-items: center; }
+      .req-bullet { width: 8px; height: 8px; background: #ff6900; border-radius: 50%; margin-right: 12px; flex-shrink: 0; }
+      .footer { text-align: center; padding: 30px 20px; color: #666; font-size: 14px; border-top: 1px solid #eee; margin-top: 40px; }
+      @media (max-width: 480px) { .content { padding: 24px 20px; } .button { padding: 14px 24px; font-size: 15px; } }
+  </style>
   
-  <div class="content">
-    <h2 style="color: #333; margin-bottom: 8px;">Hi ${user.firstName || 'User'},</h2>
-    
-    <p style="margin-bottom: 24px; font-size: 16px;">
-      We've received a request to reset your password. 
-      If you didn't make the request, please ignore this message. 
-      Otherwise, you can reset your password.
-    </p>
-    
-    <div style="text-align: center; margin: 32px 0;">
-      <a href="${resetUrl}" class="button" style="text-decoration: none; color:white">
-        Reset your password
-      </a>
+  </head>
+  <body>
+    <div class="header">
+    <img src="${process.env.FRONTEND_URL} + '/assets/images/main-logo.png'"/>
     </div>
     
-    <div class="requirements">
-      <h4 style="margin: 0 0 16px 0; color: #007bff;">Password Requirements:</h4>
-      <ul class="req-list">
-        <li class="req-item">
-          <span class="req-bullet"></span>
-          Contain 8-60 Characters
-        </li>
-        <li class="req-item">
-          <span class="req-bullet"></span>
-          Contains at least one letter
-        </li>
-      </ul>
+    <div class="content">
+      <h2 style="color: #333; margin-bottom: 8px;">Hi ${user.firstName || 'User'},</h2>
+      
+      <p style="margin-bottom: 24px; font-size: 16px;">
+        We've received a request to reset your password. 
+        If you didn't make the request, please ignore this message. 
+        Otherwise, you can reset your password.
+      </p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${resetUrl}" class="button" style="text-decoration: none; color:white">
+          Reset your password
+        </a>
+      </div>
+      
+      <div class="requirements">
+        <h4 style="margin: 0 0 16px 0; color: #007bff;">Password Requirements:</h4>
+        <ul class="req-list">
+          <li class="req-item">
+            <span class="req-bullet"></span>
+            Contain 8-60 Characters
+          </li>
+          <li class="req-item">
+            <span class="req-bullet"></span>
+            Contains at least one letter
+          </li>
+        </ul>
+      </div>
+      
+      <p style="font-size: 14px; color: #666; margin-top: 24px;">
+        If you didn't request this, please ignore this message.
+      </p>
     </div>
     
-    <p style="font-size: 14px; color: #666; margin-top: 24px;">
-      If you didn't request this, please ignore this message.
-    </p>
-  </div>
-  
-  <div class="footer">
-    <p>Thanks,<br><strong>DMW</strong></p>
-  </div>
-</body>
-</html>
-  `,
-    });
+    <div class="footer">
+      <p>Thanks,<br><strong>DMW</strong></p>
+    </div>
+  </body>
+  </html>
+    `,
+      });
+    } catch (error) {
+      console.error('Failed to send forgot password email:', error.message);
+    }
 
 
     // For Ethereal: log preview URL
@@ -465,12 +469,16 @@ export class AuthService {
     </a>
   `;
 
-    await this.mailerService.sendMail({
-      to: toEmails.join(','),
-      subject,
-      html: htmlContent,
-      text: `${message}\n${shareUrl}`,
-    });
+    try {
+      await this.mailerService.sendMail({
+        to: toEmails.join(','),
+        subject,
+        html: htmlContent,
+        text: `${message}\n${shareUrl}`,
+      });
+    } catch (error) {
+      console.error('Failed to send share link email:', error.message);
+    }
   }
 
   async sendQuestionAnsweredEmail(
@@ -493,11 +501,15 @@ export class AuthService {
     <p><strong>Dearborn Mid-West Estimating Team</strong></p>
   `;
 
-    await this.mailerService.sendMail({
-      to: user.email,
-      subject: 'Your Question has been Answered',
-      html: htmlContent,
-    });
+    try {
+      await this.mailerService.sendMail({
+        to: user.email,
+        subject: 'Your Question has been Answered',
+        html: htmlContent,
+      });
+    } catch (error) {
+      console.error('Failed to send question answered email:', error.message);
+    }
   }
 
   async removeProjectFromUsers(projectId: string, subProjectIds: string[]) {
