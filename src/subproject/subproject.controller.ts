@@ -107,7 +107,7 @@ export class SubProjectController {
     @Param('id') id: string,
     @Body() body: { adminId?: string; expiryTime?: Date },
   ): Promise<SubProject> {
-    if (req.user.role !== 'admin') {
+    if (req.user.role !== 'superAdmin') {
       throw new UnauthorizedException('SuperAdmins only');
     }
     return this.subProjectService.assignAdmin(id, body.adminId, body.expiryTime);
