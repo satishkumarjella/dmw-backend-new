@@ -63,7 +63,10 @@ export class SubProjectService {
 
   async findByProject(projectId: string, user: any): Promise<SubProject[]> {
     if (user.role === 'admin' || user.role === 'superAdmin') {
-      return this.subProjectModel.find({ project: projectId }).exec();
+      return this.subProjectModel
+        .find({ project: projectId })
+        .populate('assignedAdmin', 'firstName lastName email')
+        .exec();
     }
     return this.subProjectModel
       .find({
@@ -72,20 +75,28 @@ export class SubProjectService {
           { $or: [{ isPublic: true }, { _id: { $in: user.subProjects } }] },
         ],
       })
+      .populate('assignedAdmin', 'firstName lastName email')
       .exec();
   }
 
   async findById(subProjectId: string): Promise<SubProject> {
-    const subProject = await this.subProjectModel.findById(subProjectId).exec();
+    const subProject = await this.subProjectModel
+      .findById(subProjectId)
+      .populate('assignedAdmin', 'firstName lastName email')
+      .exec();
     if (!subProject) throw new Error('SubProject not found');
     return subProject;
   }
 
   async findAll(user: any): Promise<SubProject[]> {
     if (user.role === 'admin' || user.role === 'superAdmin') {
-      return this.subProjectModel.find().exec();
+      return this.subProjectModel.find()
+        .populate('assignedAdmin', 'firstName lastName email')
+        .exec();
     }
-    return this.subProjectModel.find({ _id: { $in: user.subProjects } }).exec();
+    return this.subProjectModel.find({ _id: { $in: user.subProjects } })
+      .populate('assignedAdmin', 'firstName lastName email')
+      .exec();
   }
 
   async updateSubProject(
@@ -135,6 +146,24 @@ export class SubProjectService {
       user.projects.push(projectId);
     }
     await user.save();
+  }
+
+  async assignAdmin(
+    subProjectId: string,
+    adminId?: string,
+    expiryTime?: Date,
+  ): Promise<SubProject> {
+    const updateData: any = {};
+    if (adminId !== undefined) updateData.assignedAdmin = adminId;
+    if (expiryTime !== undefined) updateData.adminExpiry = expiryTime;
+
+    const subProject = await this.subProjectModel.findByIdAndUpdate(
+      subProjectId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).populate('assignedAdmin', 'firstName lastName email');
+    if (!subProject) throw new NotFoundException('SubProject not found');
+    return subProject;
   }
 
   async hasAccess(subProjectId: string, user: any): Promise<boolean> {

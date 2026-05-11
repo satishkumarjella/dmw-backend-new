@@ -47,6 +47,12 @@ export class SubProject extends Document {
   // NEW: Add this field for Bid/NoBid tracking
   @Prop({ type: [BidDecisionSchema], default: [] })
   bidDecisions: BidDecision[];
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  assignedAdmin?: string;
+
+  @Prop()
+  adminExpiry?: Date;
 }
 
 export const SubProjectSchema = SchemaFactory.createForClass(SubProject);

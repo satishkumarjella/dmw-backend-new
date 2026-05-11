@@ -100,6 +100,19 @@ export class SubProjectController {
     return this.subProjectService.updateSubProject(id, body.name);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/assignAdmin')
+  async assignAdmin(
+    @Request() req,
+    @Param('id') id: string,
+    @Body() body: { adminId?: string; expiryTime?: Date },
+  ): Promise<SubProject> {
+    if (req.user.role !== 'admin') {
+      throw new UnauthorizedException('SuperAdmins only');
+    }
+    return this.subProjectService.assignAdmin(id, body.adminId, body.expiryTime);
+  }
+
   @Get()
   async getSubprojects() {
     return this.subProjectService.listSubprojects();
