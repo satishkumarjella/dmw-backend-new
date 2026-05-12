@@ -31,11 +31,11 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          source: "dist/,.env/,package.json,package-lock.json"
+          source: "dist/,.env/,package.json,package-lock.json,Dockerfile,docker-compose.yml"
           target: "/var/www/html/server/dmw-backend-new"
           overwrite: true
 
-      - name: Install Prod Dependencies & Restart Server
+      - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -43,7 +43,5 @@ jobs:
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             cd /var/www/html/server/dmw-backend-new
-            npm install --omit=dev
-            pm2 delete all || true
-            pm2 start dist/main.js --name "dmw-backend"
+            echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose up --build --scale api=3 -d
             echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S systemctl restart nginx

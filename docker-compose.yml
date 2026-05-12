@@ -1,21 +1,10 @@
-version: '3.8'
-
 services:
   api:
     build:
       context: .
       dockerfile: Dockerfile
     ports:
-      # This maps the container's port 3000 to a range of ports on the host.
-      # `docker-compose up --scale api=3` will map to host ports 3000, 3001, 3002.
-      - "3000-3005:3000"
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-    deploy:
-      # We will start with 3 replicas to demonstrate load balancing out of the box
-      replicas: 3
-      resources:
-        limits:
-          cpus: '0.50'
-          memory: 512M
+      - "3001-3003:3000" # Map host ports 3001, 3002, and 3003 to container port 3000
+    env_file:
+      - env/.env.development # Load environment variables from env folder
+    restart: unless-stopped
