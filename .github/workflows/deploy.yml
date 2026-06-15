@@ -3,7 +3,8 @@ name: Build and Deploy Backend
 on:
   push:
     branches:
-      - master # Trigger on pushes to the main branch
+      - dev
+      - prod
 
 jobs:
   deploy:
@@ -28,7 +29,7 @@ jobs:
       - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ github.ref_name == 'dev' && secrets.SERVER_HOST || secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           source: "dist/,.env/,package.json,package-lock.json,Dockerfile,docker-compose.yml"
@@ -38,10 +39,14 @@ jobs:
       - name: Deploy with Docker Compose
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ github.ref_name == 'dev' && secrets.SERVER_HOST || secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
           script: |
             cd /var/www/html/server/dmw-backend-new
-            echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose up --build --scale api=3 -d
-            echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S systemctl restart nginx
+            if [ "${{ github.ref_name }}" = "dev" ]; then
+              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.yml up --build -d
+            else
+              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.prod.yml up --build --scale api=3 -d
+              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S systemctl restart nginx
+            fi

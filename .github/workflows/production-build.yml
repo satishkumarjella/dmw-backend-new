@@ -1,0 +1,27 @@
+name: Production Build
+
+on:
+  push:
+    branches:
+      - prod
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Inject Production Environment Variables
+        run: |
+          mkdir -p env
+          # This requires creating a repository secret named PROD_ENV_FILE in GitHub Settings
+          echo "${{ secrets.PROD_ENV_FILE }}" > env/.env.production
+
+      - name: Build Production Docker Image
+        run: docker compose -f docker-compose.prod.yml build
+
+      - name: Verify Production Container Starts
+        run: docker compose -f docker-compose.prod.yml up -d
