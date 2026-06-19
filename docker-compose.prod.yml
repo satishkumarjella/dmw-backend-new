@@ -3,11 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3001-3003:3000" # Map host ports 3001, 3002, and 3003 to container port 3000
+    expose:
+      - "3000"
     env_file:
-      - env/.env.production # Load environment variables from env folder
+      - env/.env.production
     restart: unless-stopped
+    networks:
+      - dmw-shared
 
   nginx:
     build:
@@ -19,3 +21,9 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+    networks:
+      - dmw-shared
+
+networks:
+  dmw-shared:
+    external: true
