@@ -10,11 +10,12 @@ services:
     restart: unless-stopped
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx-stage
     ports:
       - "80:80"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d:ro
     depends_on:
       - api
     restart: unless-stopped
