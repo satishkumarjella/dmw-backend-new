@@ -9,7 +9,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-# Production stage
+# Production dependencies stage
 FROM base AS production
 RUN npm install --omit=dev
 COPY dist ./dist
@@ -25,6 +25,4 @@ CMD ["node", "dist/main.js"]
 # Nginx proxy stage (this is what your docker-compose.prod.yml expects)
 FROM nginx:alpine AS nginx-stage
 # Copy your nginx configuration for API routing
-COPY nginx.conf /etc/nginx/nginx.conf
-# Or copy to the default configuration directory
 COPY nginx/api-proxy.conf /etc/nginx/conf.d/default.conf
