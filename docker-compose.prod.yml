@@ -3,9 +3,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: api-stage  # <--- THIS TELLS DOCKER TO STOP AT THE API STAGE
+      target: api-stage
     ports:
-      - "3001-3003:3000"
+      - "3001:3000"
+      - "3002:3000"
+      - "3003:3000"
     env_file:
       - env/.env.production
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx-stage
+    ports:
+      - "80:80"
+    depends_on:
+      - api
     restart: unless-stopped
