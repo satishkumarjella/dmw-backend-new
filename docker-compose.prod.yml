@@ -9,14 +9,3 @@ services:
     env_file:
       - env/.env.production
     restart: unless-stopped
-
-  nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: nginx-stage
-    ports:
-      - "80:80"
-    depends_on:
-      - api
-    restart: unless-stopped
