@@ -44,6 +44,11 @@ export class AuthService {
     signature: string,
     trade: string,
   ): Promise<any> {
+    const existingUser = await this.userModel.findOne({ email });
+    if (existingUser) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new this.userModel({
       email,
