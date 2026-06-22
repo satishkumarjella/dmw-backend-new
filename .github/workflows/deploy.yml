@@ -32,7 +32,7 @@ jobs:
           host: ${{ github.ref_name == 'dev' && secrets.SERVER_HOST || secrets.PROD_SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           password: ${{ secrets.SERVER_PASSWORD }}
-          source: "dist/,.env/,package.json,package-lock.json,Dockerfile,docker-compose.yml"
+          source: "src/,tsconfig.json,tsconfig.build.json,nest-cli.json,.dockerignore,package.json,package-lock.json,Dockerfile,docker-compose.yml,docker-compose.prod.yml,nginx/,env/"
           target: "/var/www/html/server/dmw-backend-new"
           overwrite: true
 
@@ -45,8 +45,9 @@ jobs:
           script: |
             cd /var/www/html/server/dmw-backend-new
             if [ "${{ github.ref_name }}" = "dev" ]; then
-              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.yml up --build -d
+              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.yml config
+              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.yml up --build --force-recreate -d
             else
-              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.prod.yml up --build --scale api=3 -d
-              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S systemctl restart nginx
+              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.prod.yml config
+              echo '${{ secrets.SERVER_PASSWORD }}' | sudo -S docker compose -f docker-compose.prod.yml up --build --force-recreate --scale api=3 -d
             fi

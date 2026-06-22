@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: api-stage
     ports:
       - "3001-3003:3000" # Map host ports 3001, 3002, and 3003 to container port 3000
     env_file:
