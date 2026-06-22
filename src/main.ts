@@ -7,6 +7,8 @@ async function configureAzureBlobCors(connectionString: string) {
     const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
     const allowedOrigins = [
       'http://172.190.109.60',
+      'http://dmw-projects-rfq.dmwcc.com',
+      'https://dmw-projects-rfq.dmwcc.com',
       'http://172.212.106.192',
       'http://172.212.106.192:4200',
       'http://localhost:4200',
@@ -38,6 +40,8 @@ async function bootstrap() {
     origin: [
       'http://localhost:4200',
       'http://172.190.109.60',
+      'http://dmw-projects-rfq.dmwcc.com',
+      'https://dmw-projects-rfq.dmwcc.com',
       'http://172.212.106.192',
       'http://172.212.106.192:4200',
       'https://your-prod-frontend-domain.com'
