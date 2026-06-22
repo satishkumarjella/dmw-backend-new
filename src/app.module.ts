@@ -22,6 +22,7 @@ import { NoticeBoardModule } from './notice-board/notice-board.module';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URI'),
+        dbName: configService.get<string>('MONGO_DB_NAME') || 'test',
       }),
     }),
     JwtModule.registerAsync({

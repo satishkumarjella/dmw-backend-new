@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-stage
+    ports:
+      - "3001-3003:3000"
+    env_file:
+      - env/.env.production
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nginx-stage
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
