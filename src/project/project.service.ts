@@ -48,7 +48,7 @@ export class ProjectService {
     const project = await this.projectModel.findById(projectId);
     if (!project) throw new Error('Project not found');
 
-    if (file) {
+    if (file && file !== "undefined" as any) {
       const document = new DocumentFile();
       document.filename = file.originalname;
       document.contentType = file.mimetype;
@@ -57,8 +57,13 @@ export class ProjectService {
       project.termsFile = document;
     }
 
-    project.projectTerms = body.terms;
-    return project.save();
+    try {
+      project.projectTerms = body.terms;
+      return await project.save();
+    } catch (error: any) {
+      const { BadRequestException } = require('@nestjs/common');
+      throw new BadRequestException(`Failed to save project: ${error.message}`);
+    }
   }
 
   async delete(projectId: string): Promise<void> {
