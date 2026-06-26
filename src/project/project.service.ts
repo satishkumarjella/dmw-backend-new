@@ -47,7 +47,7 @@ export class ProjectService {
   async update(projectId: string, file: Express.Multer.File, body: any): Promise<Project> {
     const project = await this.projectModel.findById(projectId);
     if (!project) throw new Error('Project not found');
-    
+
     if (file) {
       const document = new DocumentFile();
       document.filename = file.originalname;
@@ -56,7 +56,7 @@ export class ProjectService {
       document.uploadDate = new Date();
       project.termsFile = document;
     }
-    
+
     project.projectTerms = body.terms;
     return project.save();
   }
